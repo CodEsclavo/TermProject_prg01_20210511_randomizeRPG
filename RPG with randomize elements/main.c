@@ -33,19 +33,24 @@ int player_class;
 int player_LVL = 1;
 
 //초기 플레이어 스텟
-//1:힘 2:체력 3:민첩 4:지능 5:운
-int player_stats[5] = { 1 };
+//1:힘 2:화술 3:민첩 4:지능 5:행운
+int player_stats[5] = { 1,1,1,1,1 };
+
 
 int DICEROLL(int);
 void cell_deployment();
+void stat_distribution(int);
 void start_game();
 void LVL_scailing(int);
 bool character_alive();
 
+
+//주사위 굴리기
 int DICEROLL(int side) {
 	int result = rand() % side;
 	return result;
 }
+
 
 //전체적인 게임 화면 배치
 void cell_deployment() {
@@ -108,10 +113,51 @@ void cell_deployment() {
 }
 
 
+//스탯 분배
+void stat_distribution(int point_remain) {
+
+	printf("\n투자할 스탯과 수치을 입력하세요 (point remain : %d)\n(1:힘 2:화술 3:민첩 4:지능 5:행운)\n ( ex) 1 2 : 힘 + 2 )\n", point_remain);
+
+	int stat_points = point_remain;
+	int invested_point = 0;
+	int select_stat;
+	int used_point = 0;
+
+	while (invested_point != stat_points) {
+
+		scanf_s("%d %d", &select_stat, &used_point);
+
+		if (invested_point + used_point > stat_points) {
+			while (invested_point + used_point > stat_points) {
+				printf("!!!WARNING!!!\n!!!stat point overflow!!!");
+				Sleep(1000);
+				printf("\n다시 입력하세요\n");
+				scanf_s("%d %d", &select_stat, &used_point);
+			}
+		}
+
+		if (select_stat < 1 || select_stat > 5) {
+			while (select_stat < 1 || select_stat > 5) {
+				printf("!!!WARNING!!!\n!!!stat index error!!!");
+				Sleep(1000);
+				printf("\n다시 입력하세요\n");
+				scanf_s("%d %d", &select_stat, &used_point);
+			}
+		}
+
+		player_stats[select_stat - 1] += used_point;
+		invested_point += used_point;
+		printf("사용한 포인트 : %d, 잔여 포인트 : %d\n", invested_point, stat_points - invested_point);
+	}
+
+	printf("분배 완료!\n\n| 힘 : %d | 화술 : %d | 민첩 : %d | 지능 : %d | 행운 : %d |", player_stats[0], player_stats[1], player_stats[2], player_stats[3], player_stats[4]);
+}
+
+
 //게임을 시작하고 캐릭터 생성
 void start_game() {
 
-	char submit[1];
+	char submit[3];
 
 	printf("캐릭터 이름을 설정하세요. (숫자포함 영문 최대 17자, 한글 최대 8자) : ");
 
@@ -161,7 +207,7 @@ void start_game() {
 
 	printf("\n\n아무거나 입력하여 넘어가기....\n");
 
-	scanf_s("%s", submit, 1);
+	scanf_s("%s", submit, 3);
 
 	printf("\nLoading.");
 
@@ -174,49 +220,16 @@ void start_game() {
 
 	printf("###초기 스탯을 설정합니다.###\n");
 
-	printf("\n투자할 스탯과 수치을 입력하세요 ( ex) 1 2 )\n(1:힘 2:체력 3:민첩 4:지능 5:운)\n");
-
-	int stat_points = 10;
-	int invested_point = 0;
-	int select_stat;
-	int used_point = 0;
-	
-
-
-	while (invested_point != stat_points) {
-
-		scanf_s("%d %d", &select_stat, &used_point);
-
-		if (invested_point + used_point > stat_points) {
-			while (invested_point + used_point > stat_points) {
-				printf("!!!WARNING!!!\n!!!stat point overflow!!!");
-				Sleep(1000);
-				printf("\n다시 입력하세요\n");
-				scanf_s("%d %d", &select_stat, &used_point);
-			}
-		}
-
-		if (select_stat < 1 || select_stat > 5) {
-			while (select_stat < 1 || select_stat > 5) {
-				printf("!!!WARNING!!!\n!!!stat index error!!!");
-				Sleep(1000);
-				printf("\n다시 입력하세요\n");
-				scanf_s("%d %d", &select_stat, &used_point);
-			}
-		}
-
-		player_stats[select_stat-1] += used_point;
-		invested_point += used_point;
-		printf("사용한 포인트 : %d, 잔여 포인트 : %d\n", invested_point, stat_points - invested_point);
-	}
-	printf("분배 완료\n\n| 힘 : %d | 체력 : %d | 민첩 : %d | 지능 : %d | 행운 : %d |", player_stats[0], player_stats[1], player_stats[2], player_stats[3], player_stats[4]);
+	stat_distribution(10);
 }
+
 
 
 void LVL_scailing(int player_LVL) {
 
 
 }
+
 
 //캐릭터 생존 여부
 bool character_alive() {
@@ -227,6 +240,7 @@ bool character_alive() {
 
 
 int main(void) {
+
 	srand(time(NULL));
 
 	cell_deployment();
