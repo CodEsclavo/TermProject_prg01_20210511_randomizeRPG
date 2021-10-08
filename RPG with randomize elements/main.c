@@ -33,8 +33,6 @@ char player_name[17] = "\0";
 int class_rating[6] = { 1,2,3,4,5,6 };
 int player_class;
 
-//초기 플레이어 레벨
-int player_LVL = 1;
 
 //초기 플레이어 스텟
 //1:힘 2:화술 3:민첩 4:지능 5:행운
@@ -56,10 +54,16 @@ struct object_build {
 struct item_wep {
 	char name[20];
 	int atk;
-	int value;
 	int durability;
+	int value;
 };
 
+//방어구 프리셋
+struct item_arm {
+	char name[20];
+	int def;
+	int value;
+};
 
 //의약품 프리셋
 struct item_medical {
@@ -72,9 +76,12 @@ int DICEROLL(int);
 void DICE_rolling();
 void check_N_confirm();
 int yes_or_no();
+
 int LVL_scailing(char, int);
 void creat_monster(int);
+
 void cell_deployment();
+
 void stat_distribution(int);
 void start_game();
 
@@ -138,6 +145,104 @@ int yes_or_no() {
 	}
 }
 
+//스탯 분배
+void stat_distribution(int point_remain) {
+
+	printf("\n투자할 스탯과 수치를 입력하세요. (point remain : %d)\n(1:힘 2:화술 3:민첩 4:지능 5:행운)\n( ex) 1 2 : 힘 + 2 )\n", point_remain);
+
+	int stat_points = point_remain;
+	int invested_point = 0;
+	int select_stat;
+	int used_point = 0;
+
+	while (invested_point != stat_points) {
+
+		scanf_s("%d %d", &select_stat, &used_point);
+
+		if (invested_point + used_point > stat_points) {
+			while (invested_point + used_point > stat_points) {
+				printf("!!!WARNING!!!\n!!!stat point overflow!!!");
+				Sleep(1000);
+				printf("\n다시 입력하세요\n");
+				scanf_s("%d %d", &select_stat, &used_point);
+			}
+		}
+
+		if (select_stat < 1 || select_stat > 5) {
+			while (select_stat < 1 || select_stat > 5) {
+				printf("!!!WARNING!!!\n!!!stat index error!!!");
+				Sleep(1000);
+				printf("\n다시 입력하세요\n");
+				scanf_s("%d %d", &select_stat, &used_point);
+			}
+		}
+
+		player_stats[select_stat - 1] += used_point;
+		invested_point += used_point;
+		printf("사용한 포인트 : %d, 잔여 포인트 : %d\n", invested_point, stat_points - invested_point);
+	}
+
+	printf("\n분배 완료!\n\n%s의 능력치\n|| 힘 : %d || 화술 : %d || 민첩 : %d || 지능 : %d || 행운 : %d ||\n", player_name, player_stats[0], player_stats[1], player_stats[2], player_stats[3], player_stats[4]);
+
+}
+
+
+//게임을 시작하고 캐릭터 생성
+void start_game() {
+
+	printf("캐릭터 이름을 설정하세요. (숫자포함 영문 최대 17자, 한글 최대 8자) : ");
+
+	scanf_s("%s", player_name, 17);
+
+	printf("\n%s의 직업을 정하기 위해 주사위를 굴립니다.\n\n", player_name);
+
+	player_class = class_rating[DICEROLL(6)];
+
+	DICE_rolling();
+
+	switch (player_class) {
+	case 1:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 거지 입니다.\n", player_name);
+		break;
+	case 2:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 성직자 입니다.\n", player_name);
+		break;
+	case 3:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 목수 입니다.\n", player_name);
+		break;
+	case 4:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 개장수 입니다.\n", player_name);
+		break;
+	case 5:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 기사 입니다.\n", player_name);
+		break;
+	case 6:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 농부 입니다.\n", player_name);
+		break;
+	}
+
+	check_N_confirm();
+
+	printf("###초기 스탯을 설정합니다.###\n");
+
+	stat_distribution(10);
+
+	struct object_build player = {
+		player_name,
+		1,
+		player_stats,
+		50 + player_stats[3] * 5,
+		100
+	};
+
+}
+
 //몬스터 레벨 스케일링
 int LVL_scailing(char index[20], int player_LVL) {
 
@@ -167,7 +272,8 @@ int LVL_scailing(char index[20], int player_LVL) {
 	}
 
 	if (index == "HP") {
-		10 + object_LVL * 5;
+		int object_HP = (10 + object_LVL * 5);
+		return object_HP;
 	}
 
 	if (index == "money") {
@@ -184,6 +290,7 @@ void creat_monster(int player_level) {
 		"구울",
 		LVL_scailing("LVL", player_level),
 		LVL_scailing("stats", player_level),
+		LVL_scailing("HP", player_level),
 		LVL_scailing("money", player_level)
 	};
 
@@ -191,6 +298,7 @@ void creat_monster(int player_level) {
 		"레이더",
 		LVL_scailing("LVL", player_level),
 		LVL_scailing("stats", player_level),
+		LVL_scailing("HP", player_level),
 		LVL_scailing("money", player_level)
 	};
 
@@ -198,6 +306,7 @@ void creat_monster(int player_level) {
 		"방사능 모기",
 		LVL_scailing("LVL", player_level),
 		LVL_scailing("stats", player_level),
+		LVL_scailing("HP", player_level),
 		LVL_scailing("money", player_level)
 	};
 
@@ -205,6 +314,7 @@ void creat_monster(int player_level) {
 		"거대바퀴",
 		LVL_scailing("LVL", player_level),
 		LVL_scailing("stats", player_level),
+		LVL_scailing("HP", player_level),
 		LVL_scailing("money", player_level)
 	};
 
@@ -212,48 +322,84 @@ void creat_monster(int player_level) {
 		"실험체",
 		LVL_scailing("LVL", player_level),
 		LVL_scailing("stats", player_level),
+		LVL_scailing("HP", player_level),
 		LVL_scailing("money", player_level)
 	};
 
 }
 
-void items() {
 
-	//무기군
+// 아이템
+void items_weps() {
+
+	//무기류
 	struct item_wep knife = {
 		"칼",
 		rand() % 10 + 5,
-		(int)15 * 0.8 + ((int)knife.atk * 0.3),
-		rand() % 10 + 10
+		rand() % 10 + 10,
+		(int)15 * 0.8 + knife.durability
 	};
 
 	struct item_wep bat = {
 		"야구배트",
 		rand() % 13 + 12,
-		(int)25 * 0.8 + ((int)bat.atk * 0.3),
-		rand() % 12 + 15
+		rand() % 12 + 15,
+		(int)25 * 0.8 + bat.durability
 	};
 
 	struct item_wep g_club = {
 		"골프채",
 		rand() % 10 + 15,
-		(int)25 * 0.8 + ((int)g_club.atk * 0.3),
-		rand() % 13 + 10
+		rand() % 13 + 10,
+		(int)25 * 0.8 + g_club.durability
 	};
 
 	struct item_wep imprv_firearm = {
 		"급조 총기",
 		rand() % 10 + 25,
-		(int)35 * 0.8 + ((int)imprv_firearm.atk * 0.3),
-		rand() % 5 + 10
+		rand() % 5 + 10,
+		(int)35 * 0.8 + imprv_firearm.durability
 	};
 
 	struct item_wep revolver = {
 		"리볼버",
 		rand() % 20 + 30,
-		(int)30 * 0.8 + ((int)revolver.atk * 0.3),
-		rand() % 10 + 20
+		rand() % 10 + 20,
+		(int)30 * 0.8 + revolver.durability
 	};
+
+	struct item_wep shotgun = {
+		"산탄총",
+		rand() % 10 + 90,
+		rand() % 5 + 15,
+		(int)100 * 0.8 + shotgun.durability
+	};
+
+	struct item_wep hunting_rifle = {
+		"사냥용 소총",
+		rand() % 20 + 50,
+		rand() % 20 + 25,
+		(int)70 * 0.8 + hunting_rifle.durability
+	};
+
+	struct item_wep assault_rifle = {
+		"돌격소총",
+		rand() % 10 + 65,
+		rand() % 10 + 40,
+		(int)75 * 0.8 + assault_rifle.durability
+	};
+}
+
+void item_defs() {
+
+	//방어구류
+
+}
+
+void item_meds() {
+
+	//의약품류
+
 }
 
 
@@ -461,103 +607,7 @@ void cell_deployment() {
 */
 
 
-//스탯 분배
-void stat_distribution(int point_remain) {
 
-	printf("\n투자할 스탯과 수치를 입력하세요. (point remain : %d)\n(1:힘 2:화술 3:민첩 4:지능 5:행운)\n( ex) 1 2 : 힘 + 2 )\n", point_remain);
-
-	int stat_points = point_remain;
-	int invested_point = 0;
-	int select_stat;
-	int used_point = 0;
-
-	while (invested_point != stat_points) {
-
-		scanf_s("%d %d", &select_stat, &used_point);
-
-		if (invested_point + used_point > stat_points) {
-			while (invested_point + used_point > stat_points) {
-				printf("!!!WARNING!!!\n!!!stat point overflow!!!");
-				Sleep(1000);
-				printf("\n다시 입력하세요\n");
-				scanf_s("%d %d", &select_stat, &used_point);
-			}
-		}
-
-		if (select_stat < 1 || select_stat > 5) {
-			while (select_stat < 1 || select_stat > 5) {
-				printf("!!!WARNING!!!\n!!!stat index error!!!");
-				Sleep(1000);
-				printf("\n다시 입력하세요\n");
-				scanf_s("%d %d", &select_stat, &used_point);
-			}
-		}
-
-		player_stats[select_stat - 1] += used_point;
-		invested_point += used_point;
-		printf("사용한 포인트 : %d, 잔여 포인트 : %d\n", invested_point, stat_points - invested_point);
-	}
-
-	printf("\n분배 완료!\n\n%s의 능력치\n|| 힘 : %d || 화술 : %d || 민첩 : %d || 지능 : %d || 행운 : %d ||\n", player_name, player_stats[0], player_stats[1], player_stats[2], player_stats[3], player_stats[4]);
-
-}
-
-
-//게임을 시작하고 캐릭터 생성
-void start_game() {
-
-	printf("캐릭터 이름을 설정하세요. (숫자포함 영문 최대 17자, 한글 최대 8자) : ");
-
-	scanf_s("%s", player_name, 17);
-
-	printf("\n%s의 직업을 정하기 위해 주사위를 굴립니다.\n\n", player_name);
-
-	player_class = class_rating[DICEROLL(6)];
-
-	DICE_rolling();
-
-	switch (player_class) {
-	case 1:
-		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-		printf("%s의 직업은 거지 입니다.\n", player_name);
-		break;
-	case 2:
-		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-		printf("%s의 직업은 성직자 입니다.\n", player_name);
-		break;
-	case 3:
-		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-		printf("%s의 직업은 목수 입니다.\n", player_name);
-		break;
-	case 4:
-		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-		printf("%s의 직업은 개장수 입니다.\n", player_name);
-		break;
-	case 5:
-		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-		printf("%s의 직업은 기사 입니다.\n", player_name);
-		break;
-	case 6:
-		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-		printf("%s의 직업은 농부 입니다.\n", player_name);
-		break;
-	}
-
-	check_N_confirm();
-
-	printf("###초기 스탯을 설정합니다.###\n");
-
-	stat_distribution(10);
-
-	struct object_build player = {
-		player_name,
-		1,
-		player_stats,
-		50 + player.LVL * 10 + player.stats[3] * 5,
-		100,
-	};
-
-}
 
 
 int main(void) {
