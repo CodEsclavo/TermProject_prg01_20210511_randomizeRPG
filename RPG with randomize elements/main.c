@@ -26,8 +26,6 @@
 char CELL_GAME[HEIGHT_GAME][WIDTH_GAME] = { ' ' };
 */
 
-char location[20] = "\0";
-
 char player_name[17] = "\0";
 
 //직업분류
@@ -42,12 +40,32 @@ int player_LVL = 1;
 //1:힘 2:화술 3:민첩 4:지능 5:행운
 int player_stats[5] = { 1,1,1,1,1 };
 
+
+//개체 프리셋
 struct object_build {
-	char name[21];
+	char name[20];
 	int LVL;
 	int stats[5];
+	int HP;
 	int money;
 	//개체 특성 부여 공간//
+};
+
+
+//무기 프리셋
+struct item_wep {
+	char name[20];
+	int atk;
+	int value;
+	int durability;
+};
+
+
+//의약품 프리셋
+struct item_medical {
+	char name[20];
+	int heal_amount;
+	int value;
 };
 
 int DICEROLL(int);
@@ -63,7 +81,7 @@ void start_game();
 void visit_shop();
 void meet_monster();
 void robbed();
-void meet_cat();
+void meet_animal();
 void earn_item();
 
 
@@ -121,9 +139,16 @@ int yes_or_no() {
 }
 
 //몬스터 레벨 스케일링
-int LVL_scailing(char index, int player_LVL) {
+int LVL_scailing(char index[20], int player_LVL) {
 
-	int object_LVL = rand() % (player_LVL + 6) - 3;
+	int object_LVL;
+
+	if (player_LVL >= 10) {
+		object_LVL = rand() % (int)player_LVL * 0.15  + (int)player_LVL * 0.92;
+	}
+	else {
+		object_LVL = rand() % (player_LVL + 1);
+	}
 
 	if (index == "LVL") {
 		return object_LVL;
@@ -139,6 +164,10 @@ int LVL_scailing(char index, int player_LVL) {
 		}
 
 		return stats_draw;
+	}
+
+	if (index == "HP") {
+		10 + object_LVL * 5;
 	}
 
 	if (index == "money") {
@@ -188,9 +217,49 @@ void creat_monster(int player_level) {
 
 }
 
+void items() {
+
+	//무기군
+	struct item_wep knife = {
+		"칼",
+		rand() % 10 + 5,
+		(int)15 * 0.8 + ((int)knife.atk * 0.3),
+		rand() % 10 + 10
+	};
+
+	struct item_wep bat = {
+		"야구배트",
+		rand() % 13 + 12,
+		(int)25 * 0.8 + ((int)bat.atk * 0.3),
+		rand() % 12 + 15
+	};
+
+	struct item_wep g_club = {
+		"골프채",
+		rand() % 10 + 15,
+		(int)25 * 0.8 + ((int)g_club.atk * 0.3),
+		rand() % 13 + 10
+	};
+
+	struct item_wep imprv_firearm = {
+		"급조 총기",
+		rand() % 10 + 25,
+		(int)35 * 0.8 + ((int)imprv_firearm.atk * 0.3),
+		rand() % 5 + 10
+	};
+
+	struct item_wep revolver = {
+		"리볼버",
+		rand() % 20 + 30,
+		(int)30 * 0.8 + ((int)revolver.atk * 0.3),
+		rand() % 10 + 20
+	};
+}
+
 
 //인카운터 설정
 void visit_shop() {
+	printf("선반에 여러가지 물건이 진열되어있다, 상점인 듯하다\n");
 
 }
 
@@ -202,7 +271,7 @@ void robbed() {
 
 }
 
-void meet_cat() {
+void meet_animal() {
 
 }
 
@@ -213,7 +282,7 @@ void earn_item() {
 //랜덤 인카운터 불러오기
 void random_encounter(int diceroll) {
 
-	int encounter_slot[4];
+	int encounter_slot[5];
 
 
 
@@ -222,35 +291,104 @@ void random_encounter(int diceroll) {
 void approch() {
 
 	int encounter_location = rand() % 4 + 1;
+	int choice;
 
 	switch (encounter_location) {
 	case 1:
-		printf("\n앞에 웬 판잣집이/가 있다.\n");
+		printf("\n앞에 웬 판잣집이 있다.\n");
 		printf("안에서 기척이 느껴진다\n");
-		printf("들어가 보시겠습니까?\n");
+		printf("다가가 보시겠습니까?\n");
+
+		choice = yes_or_no();
+
+		if (choice == 1) {
+			
+
+		}
+
+		else {
+			printf("무엇을 하시겠습니까?\n");
+
+			printf("무언가 수상한 판잣집을 뒤로한채 발을 옮겼다.\n");
+
+		}
 
 		break;
 	case 2:
-		printf("\n앞에 웬 폐건물이/가 있다.\n");
-		printf("안에서 기척이 느껴진다\n");
+		printf("\n앞에 웬 폐건물이 있다.\n");
 		printf("들어가 보시겠습니까?\n");
+
+		choice = yes_or_no();
+
+		if (choice == 1) {
+			printf("가까이 다가갔더니 인기척이 느껴졌다.\n");
+
+		}
+
+		else {
+			printf("무엇을 하시겠습니까?\n");
+
+			printf("무언가 수상한 폐건물을 뒤로한채 발을 옮겼다.\n");
+
+		}
 
 		break;
 	case 3:
 		printf("\n앞에 웬 멀쩡한 건물이/가 있다.\n");
-		printf("안에서 기척이 느껴진다\n");
 		printf("들어가 보시겠습니까?\n");
+
+		choice = yes_or_no();
+
+		if (choice == 1) {
+			printf("가까이 다가갔더니 인기척이 느껴졌다.\n");
+
+		}
+
+		else {
+			printf("무엇을 하시겠습니까?\n");
+
+			printf("무언가 수상한 멀쩡한 건물을 뒤로한채 발을 옮겼다.\n");
+
+		}
 
 		break;
 	case 4:
-		printf("\n앞에 웬 움막이/가 있다.\n");
+		printf("\n앞에 웬 움막이 있다.\n");
 		printf("안에서 기척이 느껴진다\n");
-		printf("들어가 보시겠습니까?\n");
+		printf("다가가 보시겠습니까?\n");
+
+		choice = yes_or_no();
+
+		if (choice == 1) {
+			printf("가까이 다가갔더니 인기척이 느껴졌다.\n");
+
+		}
+
+		else {
+			printf("무엇을 하시겠습니까?\n");
+
+			printf("무언가 수상한 움막을 뒤로한채 발을 옮겼다.\n");
+
+		}
 
 		break;
 	case 5:
-		printf("\n앞에 웬 벙커이/가 있다.\n");
+		printf("\n앞에 웬 벙커가 있다.\n");
 		printf("들어가 보시겠습니까?\n");
+
+		choice = yes_or_no();
+
+		if (choice == 1) {
+			printf("가까이 다가갔더니 인기척이 느껴졌다.\n");
+
+		}
+
+		else {
+			printf("무엇을 하시겠습니까?\n");
+
+			printf("무언가 수상한 벙커를 뒤로한채 발을 옮겼다.\n");
+
+		}
 
 		break;
 	case 6:
@@ -258,24 +396,6 @@ void approch() {
 
 		break;
 	}
-
-	
-	int choice = yes_or_no();
-
-	if (choice == 1) {
-		printf("가까이 다가갔더니 인기척이 느껴졌다.\n");
-
-	}
-
-	else {
-		printf("무엇을 하시겠습니까?\n");
-
-		printf("무언가 수상한 %s을/를 뒤로한채 발을 옮겼다.\n", location);
-
-	}
-
-	
-
 }
 
 //전체적인 게임 화면 배치
@@ -433,7 +553,8 @@ void start_game() {
 		player_name,
 		1,
 		player_stats,
-		100
+		50 + player.LVL * 10 + player.stats[3] * 5,
+		100,
 	};
 
 }
