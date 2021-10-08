@@ -1,6 +1,6 @@
 //포스트 아포칼립스 RPG
 
-#define _CRT_SECURE_NO_WARNING
+#define _CRT_SECURE_NO_WARNINGS
 
 #include <Windows.h>
 #include <stdio.h>
@@ -25,6 +25,8 @@
 
 char CELL_GAME[HEIGHT_GAME][WIDTH_GAME] = { ' ' };
 */
+
+char location[20] = "\0";
 
 char player_name[17] = "\0";
 
@@ -51,13 +53,18 @@ struct object_build {
 int DICEROLL(int);
 void DICE_rolling();
 void check_N_confirm();
+int yes_or_no();
 int LVL_scailing(char, int);
+void creat_monster(int);
 void cell_deployment();
 void stat_distribution(int);
 void start_game();
-void creat_monster();
 
-bool character_alive();
+void visit_shop();
+void meet_monster();
+void robbed();
+void meet_cat();
+void earn_item();
 
 
 //주사위 굴리기
@@ -99,6 +106,20 @@ void check_N_confirm() {
 	system("cls");
 }
 
+int yes_or_no() {
+	char choice[2] = { 0 };
+	printf("(Y or N)\n");
+	scanf_s("%s", &choice,2);
+
+	if (choice[0] == 'Y' || choice[0] == 'y') {
+		return 1;
+	}
+
+	else {
+		return 0;
+	}
+}
+
 //몬스터 레벨 스케일링
 int LVL_scailing(char index, int player_LVL) {
 
@@ -127,16 +148,135 @@ int LVL_scailing(char index, int player_LVL) {
 
 }
 
-void draw_monster() {
+//몬스터 종류 선언, 랜덤생성
+void creat_monster(int player_level) {
+
+	struct object_build ghoul = {
+		"구울",
+		LVL_scailing("LVL", player_level),
+		LVL_scailing("stats", player_level),
+		LVL_scailing("money", player_level)
+	};
+
+	struct object_build raider = {
+		"레이더",
+		LVL_scailing("LVL", player_level),
+		LVL_scailing("stats", player_level),
+		LVL_scailing("money", player_level)
+	};
+
+	struct object_build radsquito = {
+		"방사능 모기",
+		LVL_scailing("LVL", player_level),
+		LVL_scailing("stats", player_level),
+		LVL_scailing("money", player_level)
+	};
+
+	struct object_build roach = {
+		"거대바퀴",
+		LVL_scailing("LVL", player_level),
+		LVL_scailing("stats", player_level),
+		LVL_scailing("money", player_level)
+	};
+
+	struct object_build subject = {
+		"실험체",
+		LVL_scailing("LVL", player_level),
+		LVL_scailing("stats", player_level),
+		LVL_scailing("money", player_level)
+	};
 
 }
 
 
-//랜덤 인카운터 생성
+//인카운터 설정
+void visit_shop() {
+
+}
+
+void meet_monster() {
+
+}
+
+void robbed() {
+
+}
+
+void meet_cat() {
+
+}
+
+void earn_item() {
+
+}
+
+//랜덤 인카운터 불러오기
 void random_encounter(int diceroll) {
-	int encounter_slot[1];
+
+	int encounter_slot[4];
+
+
+
 }
 
+void approch() {
+
+	int encounter_location = rand() % 4 + 1;
+
+	switch (encounter_location) {
+	case 1:
+		printf("\n앞에 웬 판잣집이/가 있다.\n");
+		printf("안에서 기척이 느껴진다\n");
+		printf("들어가 보시겠습니까?\n");
+
+		break;
+	case 2:
+		printf("\n앞에 웬 폐건물이/가 있다.\n");
+		printf("안에서 기척이 느껴진다\n");
+		printf("들어가 보시겠습니까?\n");
+
+		break;
+	case 3:
+		printf("\n앞에 웬 멀쩡한 건물이/가 있다.\n");
+		printf("안에서 기척이 느껴진다\n");
+		printf("들어가 보시겠습니까?\n");
+
+		break;
+	case 4:
+		printf("\n앞에 웬 움막이/가 있다.\n");
+		printf("안에서 기척이 느껴진다\n");
+		printf("들어가 보시겠습니까?\n");
+
+		break;
+	case 5:
+		printf("\n앞에 웬 벙커이/가 있다.\n");
+		printf("들어가 보시겠습니까?\n");
+
+		break;
+	case 6:
+		printf("\n앞 길거리에 무언가 있다.\n");
+
+		break;
+	}
+
+	
+	int choice = yes_or_no();
+
+	if (choice == 1) {
+		printf("가까이 다가갔더니 인기척이 느껴졌다.\n");
+
+	}
+
+	else {
+		printf("무엇을 하시겠습니까?\n");
+
+		printf("무언가 수상한 %s을/를 뒤로한채 발을 옮겼다.\n", location);
+
+	}
+
+	
+
+}
 
 //전체적인 게임 화면 배치
 /*
@@ -238,7 +378,7 @@ void stat_distribution(int point_remain) {
 		printf("사용한 포인트 : %d, 잔여 포인트 : %d\n", invested_point, stat_points - invested_point);
 	}
 
-	printf("\n분배 완료!\n\n%s의 능력치\n|| 힘 : %d || 화술 : %d || 민첩 : %d || 지능 : %d || 행운 : %d ||", player_name, player_stats[0], player_stats[1], player_stats[2], player_stats[3], player_stats[4]);
+	printf("\n분배 완료!\n\n%s의 능력치\n|| 힘 : %d || 화술 : %d || 민첩 : %d || 지능 : %d || 행운 : %d ||\n", player_name, player_stats[0], player_stats[1], player_stats[2], player_stats[3], player_stats[4]);
 
 }
 
@@ -257,30 +397,30 @@ void start_game() {
 	DICE_rolling();
 
 	switch (player_class) {
-		case 1:
-			printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-			printf("%s의 직업은 거지 입니다.\n", player_name);
-			break;
-		case 2:
-			printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-			printf("%s의 직업은 성직자 입니다.\n", player_name);
-			break;
-		case 3:
-			printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-			printf("%s의 직업은 목수 입니다.\n", player_name);
-			break;
-		case 4:
-			printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-			printf("%s의 직업은 개장수 입니다.\n", player_name);
-			break;
-		case 5:
-			printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-			printf("%s의 직업은 기사 입니다.\n", player_name);
-			break;
-		case 6:
-			printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-			printf("%s의 직업은 농부 입니다.\n", player_name);
-			break;
+	case 1:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 거지 입니다.\n", player_name);
+		break;
+	case 2:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 성직자 입니다.\n", player_name);
+		break;
+	case 3:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 목수 입니다.\n", player_name);
+		break;
+	case 4:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 개장수 입니다.\n", player_name);
+		break;
+	case 5:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 기사 입니다.\n", player_name);
+		break;
+	case 6:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 농부 입니다.\n", player_name);
+		break;
 	}
 
 	check_N_confirm();
@@ -289,7 +429,6 @@ void start_game() {
 
 	stat_distribution(10);
 
-	//참조 불가능
 	struct object_build player = {
 		player_name,
 		1,
@@ -299,25 +438,6 @@ void start_game() {
 
 }
 
-//몬스터 종류별로 랜덤생성
-void creat_moster() {
-	int monster_slot[5];
-
-	struct object_build ghoul = {
-		"구울",
-		LVL_scailing("LVL", player.LVL),
-		LVL_scailing("stats", player.LVL),
-		LVL_scailing("money", player.LVL)
-	};
-}
-
-//캐릭터 생존 여부
-bool character_alive() {
-
-}
-
-
-
 
 int main(void) {
 
@@ -325,12 +445,15 @@ int main(void) {
 
 	//cell_deployment();
 
-	start_game();
+	//start_game();
 
+	approch();
+
+	/*
 	chapter1_enter(player_class);
 	chapter_proceed(player_LVL);
 	chapter1_end(player_class);
-
+	*/
 	
 
 	return 0;
