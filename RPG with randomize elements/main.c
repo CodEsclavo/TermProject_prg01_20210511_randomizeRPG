@@ -8,7 +8,8 @@
 #include <stdbool.h>
 #include <math.h>
 #include <time.h>
-/*
+#include <string.h>
+
 #define HEIGHT_GAME 60
 #define WIDTH_GAME 80
 
@@ -24,9 +25,66 @@
 #define LVLup_stats 3
 
 char CELL_GAME[HEIGHT_GAME][WIDTH_GAME] = { ' ' };
-*/
 
-char player_name[17] = "\0";
+//전체적인 게임 화면 배치
+void cell_deployment() {
+
+	// TEXT CELL
+
+	//TEXT WIDTH
+	for (int i = 0; i < WIDTH_TEXT; i++) {
+		CELL_GAME[0][i] = CELL_GAME[HEIGHT_TEXT - 1][i] = '-';
+	}
+
+	//TEXT HEIGHT
+	for (int i = 0; i < HEIGHT_TEXT; i++) {
+		CELL_GAME[i][0] = CELL_GAME[i][WIDTH_TEXT - 1] = '|';
+	}
+
+	//INNER TEXT CELL
+	for (int i = 1; i < HEIGHT_TEXT - 1; i++) {
+		for (int k = 1; k < WIDTH_TEXT - 1; k++) {
+			CELL_GAME[i][k] = ' ';
+		}
+	}
+
+	//STATS CELL
+
+	//STATS WIDTH
+	for (int i = 0; i < WIDTH_STATS; i++) {
+		CELL_GAME[0][(WIDTH_GAME - 1) - WIDTH_STATS + i] = CELL_GAME[HEIGHT_STATS - 1][(WIDTH_GAME - 1) - WIDTH_STATS + i] = '-';
+	}
+
+	//STATS HEIGHT
+	for (int i = 0; i < HEIGHT_STATS; i++) {
+		CELL_GAME[i][(WIDTH_GAME - 1) - WIDTH_STATS] = CELL_GAME[i][WIDTH_GAME - 1] = '|';
+	}
+
+	//INNER STATS CELL
+	for (int i = 0; i < HEIGHT_STATS - 1; i++) {
+		for (int k = WIDTH_GAME - WIDTH_STATS; k < WIDTH_GAME - 1; k++) {
+			CELL_GAME[i][k] = ' ';
+		}
+	}
+
+	//BEHAVE CELL
+
+	//BEHAVE WIDTH
+	for (int i = 0; i < WIDTH_BEHAVE - 1; i++) {
+		CELL_GAME[(HEIGHT_GAME - 1) - HEIGHT_BEHAVE][i] = CELL_GAME[HEIGHT_GAME - 1][i] = '-';
+	}
+
+	//BEHAVE HEIGHT
+	for (int i = (HEIGHT_GAME - 1) - HEIGHT_BEHAVE; i < HEIGHT_GAME - 1; i++) {
+		CELL_GAME[i][0] = CELL_GAME[i][WIDTH_BEHAVE - 1] = '|';
+	}
+	//INNER BEHAVE CELL
+	for (int i = HEIGHT_GAME - HEIGHT_BEHAVE; i < HEIGHT_GAME - 1; i++) {
+		for (int k = 1; k < WIDTH_BEHAVE - 1; k++) {
+			CELL_GAME[i][k] = ' ';
+		}
+	}
+}
 
 //직업분류
 //1:거지,2:성직자,3:목수,4:개장수,5:기사,6:농부
@@ -34,21 +92,16 @@ int class_rating[6] = { 1,2,3,4,5,6 };
 int player_class;
 
 
-//초기 플레이어 스텟
-//1:힘 2:화술 3:민첩 4:지능 5:행운
-int player_stats[5] = { 1,1,1,1,1 };
-
-
 //개체 프리셋
 struct object_build {
 	char name[50];
 	int LVL;
+	int class;
 	int stats[5];
 	int HP;
 	int money;
 	//개체 특성 부여 공간//
 };
-
 
 //무기 프리셋
 struct item_wep {
@@ -88,14 +141,19 @@ void creat_monster(int);
 
 void cell_deployment();
 
-void stat_distribution(int);
-void start_game();
+int* stat_distribution(int[], int, char);
+const char* setting_name();
+int setting_class();
+int setting_stats();
 
 void visit_shop();
 void meet_monster();
 void robbed();
 void meet_animal();
 void earn_item();
+
+int setting_stats();
+void hit_the_road();
 
 
 //주사위 굴리기
@@ -121,11 +179,11 @@ void DICE_rolling() {
 //사항을 확인하고 결정
 void check_N_confirm() {
 
-	char submit[3];
+	char submit[30];
 
 	printf("\n\n아무거나 입력하여 넘어가기....\n");
 
-	scanf_s("%s", submit, 3);
+	scanf_s("%s", submit, 30);
 
 	printf("\nLoading.");
 
@@ -152,7 +210,7 @@ int yes_or_no() {
 }
 
 //스탯 분배
-void stat_distribution(int point_remain) {
+int* stat_distribution(int top_stats[5], int point_remain, char player_name) {
 
 	printf("\n투자할 스탯과 수치를 입력하세요. (point remain : %d)\n(1:힘 2:화술 3:민첩 4:지능 5:행운)\n( ex) 1 2 : 힘 + 2 )\n", point_remain);
 
@@ -183,69 +241,35 @@ void stat_distribution(int point_remain) {
 			}
 		}
 
-		player_stats[select_stat - 1] += used_point;
+		top_stats[select_stat - 1] += used_point;
 		invested_point += used_point;
 		printf("사용한 포인트 : %d, 잔여 포인트 : %d\n", invested_point, stat_points - invested_point);
 	}
 
-	printf("\n분배 완료!\n\n%s의 능력치\n|| 힘 : %d || 화술 : %d || 민첩 : %d || 지능 : %d || 행운 : %d ||\n", player_name, player_stats[0], player_stats[1], player_stats[2], player_stats[3], player_stats[4]);
+	printf("\n분배 완료!\n\n%s의 능력치\n|| 힘 : %d || 화술 : %d || 민첩 : %d || 지능 : %d || 행운 : %d ||\n", player_name, top_stats[0], top_stats[1], top_stats[2], top_stats[3], top_stats[4]);
 
+	return top_stats;
 }
 
 //게임을 시작하고 캐릭터 생성
-void start_game() {
+const char* setting_name() {
 
+	static char player_name[17] = "\0";
+	
 	printf("캐릭터 이름을 설정하세요. (숫자포함 영문 최대 17자, 한글 최대 8자) : ");
 
-	scanf_s("%s", player_name, 17);
+	scanf_s("%s", player_name, sizeof(player_name));
 
-	printf("\n%s의 직업을 정하기 위해 주사위를 굴립니다.\n\n", player_name);
+	return player_name;
+}
+
+int setting_class() {
 
 	player_class = class_rating[DICEROLL(6)];
 
 	DICE_rolling();
 
-	switch (player_class) {
-	case 1:
-		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-		printf("%s의 직업은 거지 입니다.\n", player_name);
-		break;
-	case 2:
-		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-		printf("%s의 직업은 성직자 입니다.\n", player_name);
-		break;
-	case 3:
-		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-		printf("%s의 직업은 목수 입니다.\n", player_name);
-		break;
-	case 4:
-		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-		printf("%s의 직업은 개장수 입니다.\n", player_name);
-		break;
-	case 5:
-		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-		printf("%s의 직업은 기사 입니다.\n", player_name);
-		break;
-	case 6:
-		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
-		printf("%s의 직업은 농부 입니다.\n", player_name);
-		break;
-	}
-
-	check_N_confirm();
-
-	printf("###초기 스탯을 설정합니다.###\n");
-
-	stat_distribution(10);
-
-	struct object_build player = {
-		player_name,
-		1,
-		player_stats,
-		50 + player_stats[3] * 5,
-		100
-	};
-
+	return player_class;
 }
 
 //몬스터 레벨 스케일링
@@ -294,6 +318,7 @@ void creat_monster(int player_level) {
 	struct object_build ghoul = {
 		"구울",
 		LVL_scailing("LVL", player_level),
+		6,
 		LVL_scailing("stats", player_level),
 		LVL_scailing("HP", player_level),
 		LVL_scailing("money", player_level)
@@ -302,6 +327,7 @@ void creat_monster(int player_level) {
 	struct object_build raider = {
 		"레이더",
 		LVL_scailing("LVL", player_level),
+		6,
 		LVL_scailing("stats", player_level),
 		LVL_scailing("HP", player_level),
 		LVL_scailing("money", player_level)
@@ -310,6 +336,7 @@ void creat_monster(int player_level) {
 	struct object_build radsquito = {
 		"방사능 모기",
 		LVL_scailing("LVL", player_level),
+		6,
 		LVL_scailing("stats", player_level),
 		LVL_scailing("HP", player_level),
 		LVL_scailing("money", player_level)
@@ -318,6 +345,7 @@ void creat_monster(int player_level) {
 	struct object_build roach = {
 		"거대바퀴",
 		LVL_scailing("LVL", player_level),
+		6,
 		LVL_scailing("stats", player_level),
 		LVL_scailing("HP", player_level),
 		LVL_scailing("money", player_level)
@@ -326,6 +354,7 @@ void creat_monster(int player_level) {
 	struct object_build subject = {
 		"실험체",
 		LVL_scailing("LVL", player_level),
+		6,
 		LVL_scailing("stats", player_level),
 		LVL_scailing("HP", player_level),
 		LVL_scailing("money", player_level)
@@ -488,7 +517,7 @@ void item_meds() {
 //인카운터 설정
 void visit_shop() {
 	printf("선반에 여러가지 물건이 진열되어있다, 상점인 듯하다\n");
-
+	
 }
 
 void meet_monster() {
@@ -502,7 +531,6 @@ void robbed() {
 void meet_animal() {
 
 }
-
 
 //아이템 획득
 void earn_item() {
@@ -628,81 +656,76 @@ void approch() {
 	}
 }
 
-//전체적인 게임 화면 배치
-/*
-void cell_deployment() {
+void hit_the_road() {
 
-	// TEXT CELL
-
-	//TEXT WIDTH
-	for (int i = 0; i < WIDTH_TEXT; i++) {
-		CELL_GAME[0][i] = CELL_GAME[HEIGHT_TEXT - 1][i] = '-';
-	}
-
-	//TEXT HEIGHT
-	for (int i = 0; i < HEIGHT_TEXT; i++) {
-		CELL_GAME[i][0] = CELL_GAME[i][WIDTH_TEXT - 1] = '|';
-	}
-
-	//INNER TEXT CELL
-	for (int i = 1; i < HEIGHT_TEXT - 1; i++) {
-		for (int k = 1; k < WIDTH_TEXT - 1; k++) {
-			CELL_GAME[i][k] = ' ';
-		}
-	}
-
-	//STATS CELL
-
-	//STATS WIDTH
-	for (int i = 0; i < WIDTH_STATS; i++) {
-		CELL_GAME[0][(WIDTH_GAME - 1) - WIDTH_STATS + i] = CELL_GAME[HEIGHT_STATS - 1][(WIDTH_GAME - 1) - WIDTH_STATS + i] = '-';
-	}
-
-	//STATS HEIGHT
-	for (int i = 0; i < HEIGHT_STATS; i++) {
-		CELL_GAME[i][(WIDTH_GAME - 1) - WIDTH_STATS] = CELL_GAME[i][WIDTH_GAME - 1] = '|';
-	}
-
-	//INNER STATS CELL
-	for (int i = 0; i < HEIGHT_STATS - 1; i++) {
-		for (int k = WIDTH_GAME - WIDTH_STATS; k < WIDTH_GAME - 1; k++) {
-			CELL_GAME[i][k] = ' ';
-		}
-	}
-
-	//BEHAVE CELL
-
-	//BEHAVE WIDTH
-	for(int i = 0; i < WIDTH_BEHAVE - 1; i++) {
-		CELL_GAME[(HEIGHT_GAME - 1) - HEIGHT_BEHAVE][i] = CELL_GAME[HEIGHT_GAME - 1][i] = '-';
-	}
-
-	//BEHAVE HEIGHT
-	for (int i = (HEIGHT_GAME - 1) - HEIGHT_BEHAVE; i < HEIGHT_GAME - 1; i++) {
-		CELL_GAME[i][0] = CELL_GAME[i][WIDTH_BEHAVE] = '|';
-	}
-	//INNER BEHAVE CELL
-	for (int i = HEIGHT_GAME - HEIGHT_BEHAVE; i < HEIGHT_GAME - 1; i++) {
-		for (int k = 1; k < WIDTH_BEHAVE - 1; k++) {
-			CELL_GAME[i][k] = ' ';
-		}
-	}
 }
-*/
 
+void battle() {
 
-
+}
 
 
 int main(void) {
 
 	srand(time(NULL));
 
-	//cell_deployment();
+	cell_deployment();
 
-	//start_game();
+	char* player_name = setting_name();
 
-	approch();
+	printf("\n%s의 직업을 정하기 위해 주사위를 굴립니다.\n\n", player_name);
+
+	int player_class = setting_class();
+
+	switch (player_class) {
+	case 1:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 거지 입니다.\n", player_name);
+		break;
+	case 2:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 성직자 입니다.\n", player_name);
+		break;
+	case 3:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 목수 입니다.\n", player_name);
+		break;
+	case 4:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 개장수 입니다.\n", player_name);
+		break;
+	case 5:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 기사 입니다.\n", player_name);
+		break;
+	case 6:
+		printf("주사위 %d(이)가 나왔습니다.\n\n", player_class);
+		printf("%s의 직업은 농부 입니다.\n", player_name);
+		break;
+	}
+
+	check_N_confirm();
+
+	printf("###초기 스탯을 설정합니다.###\n");
+
+	int stats[5] = { 1,1,1,1,1 };
+
+	int player_stats = stat_distribution(stats, 10, player_name);
+
+	struct object_build player = {
+		player_name,
+		1,
+		player_class,
+		player_stats,
+		50 + player.stats[2] * 5,
+		100
+	};
+
+	while (player.HP > 0) {
+		hit_the_road();
+		approch();
+	}
+	
 
 	/*
 	chapter1_enter(player_class);
