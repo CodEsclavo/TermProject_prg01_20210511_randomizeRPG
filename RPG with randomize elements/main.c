@@ -41,7 +41,7 @@ int player_stats[5] = { 1,1,1,1,1 };
 
 //개체 프리셋
 struct object_build {
-	char name[20];
+	char name[50];
 	int LVL;
 	int stats[5];
 	int HP;
@@ -52,24 +52,30 @@ struct object_build {
 
 //무기 프리셋
 struct item_wep {
-	char name[20];
+	char name[50];
 	int atk;
 	int durability;
 	int value;
 };
 
 //방어구 프리셋
-struct item_arm {
-	char name[20];
+struct item_armr {
+	char name[50];
 	int def;
 	int value;
 };
 
 //의약품 프리셋
 struct item_medical {
-	char name[20];
+	char name[50];
 	int heal_amount;
 	int value;
+};
+
+struct player_inventory {
+	int Weapons[8];
+	int Armours[6];
+	int Meds[5];
 };
 
 int DICEROLL(int);
@@ -185,7 +191,6 @@ void stat_distribution(int point_remain) {
 	printf("\n분배 완료!\n\n%s의 능력치\n|| 힘 : %d || 화술 : %d || 민첩 : %d || 지능 : %d || 행운 : %d ||\n", player_name, player_stats[0], player_stats[1], player_stats[2], player_stats[3], player_stats[4]);
 
 }
-
 
 //게임을 시작하고 캐릭터 생성
 void start_game() {
@@ -337,68 +342,145 @@ void items_weps() {
 		"칼",
 		rand() % 10 + 5,
 		rand() % 10 + 10,
-		(int)15 * 0.8 + knife.durability
+		25 + (int)knife.atk * 0.8 + knife.durability
 	};
 
 	struct item_wep bat = {
 		"야구배트",
 		rand() % 13 + 12,
 		rand() % 12 + 15,
-		(int)25 * 0.8 + bat.durability
+		45 + (int)bat.atk * 0.8 + bat.durability
 	};
 
 	struct item_wep g_club = {
 		"골프채",
 		rand() % 10 + 15,
 		rand() % 13 + 10,
-		(int)25 * 0.8 + g_club.durability
+		65 + (int)g_club.atk * 0.8 + g_club.durability
 	};
 
 	struct item_wep imprv_firearm = {
 		"급조 총기",
 		rand() % 10 + 25,
 		rand() % 5 + 10,
-		(int)35 * 0.8 + imprv_firearm.durability
+		50 + (int)imprv_firearm.atk * 0.8 + imprv_firearm.durability
 	};
 
 	struct item_wep revolver = {
 		"리볼버",
 		rand() % 20 + 30,
 		rand() % 10 + 20,
-		(int)30 * 0.8 + revolver.durability
+		150 + (int)revolver.atk * 0.6 + revolver.durability
 	};
 
 	struct item_wep shotgun = {
 		"산탄총",
-		rand() % 10 + 90,
+		rand() % 50 + 50,
 		rand() % 5 + 15,
-		(int)100 * 0.8 + shotgun.durability
+		175 + (int)shotgun.atk * 0.65 + shotgun.durability
 	};
 
 	struct item_wep hunting_rifle = {
 		"사냥용 소총",
-		rand() % 20 + 50,
+		rand() % 20 + 70,
 		rand() % 20 + 25,
-		(int)70 * 0.8 + hunting_rifle.durability
+		170 + (int)hunting_rifle.atk * 0.7 + hunting_rifle.durability
 	};
 
 	struct item_wep assault_rifle = {
 		"돌격소총",
-		rand() % 10 + 65,
+		rand() % 40 + 100,
 		rand() % 10 + 40,
-		(int)75 * 0.8 + assault_rifle.durability
+		275 + assault_rifle.durability
+	};
+
+	struct item_wep railgun = {
+		"레일건",
+		rand() % 50 + 200,
+		rand() % 10 + 20,
+		500
+	};
+
+	struct item_wep fat_boy = {
+		"팻 보이",
+		99999,
+		1,
+		9999
 	};
 }
 
 void item_defs() {
 
 	//방어구류
+	struct item_armr rags = {
+		"누더기",
+		rand() % 10 + 10,
+		30 + (int)rags.def * 0.8
+	};
 
+	struct item_armr light_armour = {
+		"가벼운 방어구",
+		rand() % 5 + 15,
+		55 + (int)light_armour.def * 0.8
+	};
+
+	struct item_armr stabprf_vest = {
+		"방검복",
+		rand() % 20 + 35,
+		70 + (int)stabprf_vest.def * 0.75
+	};
+
+	struct item_armr bulletprf_vest = {
+		"방탄조끼",
+		rand() % 20 + 50,
+		120 + (int)bulletprf_vest.def * 0.6
+	};
+
+	struct item_armr exo_suit = {
+		"엑소스켈레톤",
+		500,
+		2000
+	};
+
+	struct item_armr goliath = {
+		"\"골리앗\" 신체강화 수트",
+		9999,
+		99999
+	};
 }
 
 void item_meds() {
 
 	//의약품류
+	struct item_medical enrgbar = {
+		"에너지바",
+		5,
+		30
+	};
+
+	struct item_medical bandage = {
+		"붕대",
+		15,
+		75
+	};
+
+	struct item_medical painkiller = {
+		"진통제",
+		17.5,
+		85
+	};
+
+	struct item_medical first_aid = {
+		"구급상자",
+		35,
+		155
+	};
+
+	struct item_medical survival_kit = {
+		"서바이벌 키트",
+		55,
+		275
+	};
 
 }
 
@@ -421,6 +503,8 @@ void meet_animal() {
 
 }
 
+
+//아이템 획득
 void earn_item() {
 
 }
