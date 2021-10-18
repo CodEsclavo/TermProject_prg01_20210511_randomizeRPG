@@ -1,7 +1,5 @@
 //포스트 아포칼립스 RPG
 
-#define _CRT_SECURE_NO_WARNINGS
-
 #include <Windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,21 +8,28 @@
 #include <time.h>
 #include <string.h>
 
-#define HEIGHT_GAME 21
-#define WIDTH_GAME 48
+#define HEIGHT_GAME 56
+#define WIDTH_GAME 210
 
-#define HEIGHT_TEXT 9
-#define WIDTH_TEXT 27
+#define HEIGHT_TEXT 24
+#define WIDTH_TEXT 128
 
-#define HEIGHT_STATS 9
-#define WIDTH_STATS 15
+#define HEIGHT_STATS 24
+#define WIDTH_STATS 40
 
-#define HEIGHT_BEHAVE 9
-#define WIDTH_BEHAVE 48
+#define HEIGHT_BEHAVE 24
+#define WIDTH_BEHAVE 210
 
 #define LVLup_stats 3
 
 char CELL_GAME[HEIGHT_GAME][WIDTH_GAME] = { ' ' };
+
+void gotoxy(int, int);
+
+void gotoxy(int x, int y) {
+	COORD pos = { x, y };
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
+}
 
 //전체적인 게임 화면 배치
 void cell_deployment() {
@@ -85,23 +90,23 @@ int player_class;
 int player_stats[5] = { 1,1,1,1,1 };
 
 
-typedef struct {
+struct main_character {
 	char name[17];
 	int LVL;
 	int class;
 	int stats[5];
 	int HP;
 	int money;
-} main_character;
+} player;
 
 //개체 프리셋
-struct object_build {
+typedef struct object_build {
 	char name[50];
 	int LVL;
 	int stats[5];
 	int HP;
 	int money;
-};
+} NPC;
 
 //무기 프리셋
 struct item_wep {
@@ -142,6 +147,7 @@ int LVL_scailing(char[], int);
 void creat_monster(int);
 struct item_wep weapons(int);
 struct item_armr armours(int);
+struct item_meds medications(int);
 
 int* stat_distribution(int[], int, char[]);
 const char* setting_name();
@@ -156,7 +162,7 @@ void earn_item();
 void approach();
 void hit_the_road();
 void battle();
-
+void display(int, int);
 
 
 //주사위 굴리기
@@ -256,7 +262,7 @@ int LVL_scailing(char index[20], int player_LVL) {
 //몬스터 종류 선언, 랜덤생성
 void creat_monster(int player_level) {
 
-	struct object_build ghoul = {
+	NPC ghoul = {
 		"구울",
 		LVL_scailing("LVL", player_level),
 		LVL_scailing("stats", player_level),
@@ -264,7 +270,7 @@ void creat_monster(int player_level) {
 		LVL_scailing("money", player_level)
 	};
 
-	struct object_build raider = {
+	NPC raider = {
 		"레이더",
 		LVL_scailing("LVL", player_level),
 		LVL_scailing("stats", player_level),
@@ -272,7 +278,7 @@ void creat_monster(int player_level) {
 		LVL_scailing("money", player_level)
 	};
 
-	struct object_build radsquito = {
+	NPC radsquito = {
 		"방사능 모기",
 		LVL_scailing("LVL", player_level),
 		LVL_scailing("stats", player_level),
@@ -280,7 +286,7 @@ void creat_monster(int player_level) {
 		LVL_scailing("money", player_level)
 	};
 
-	struct object_build roach = {
+	NPC roach = {
 		"거대바퀴",
 		LVL_scailing("LVL", player_level),
 		LVL_scailing("stats", player_level),
@@ -288,7 +294,7 @@ void creat_monster(int player_level) {
 		LVL_scailing("money", player_level)
 	};
 
-	struct object_build subject = {
+	NPC subject = {
 		"실험체",
 		LVL_scailing("LVL", player_level),
 		LVL_scailing("stats", player_level),
@@ -648,6 +654,10 @@ int setting_class(char player_name[17]) {
 }
 
 
+struct main_character initialize () {
+
+}
+
 
 //인카운터 설정
 void visit_shop() {
@@ -792,7 +802,7 @@ void battle() {
 
 }
 
-void display(int HP, int stats[5]) {
+void display(char p_name[17], int p_HP, int p_stats[5], int p_money) {
 
 	for (int i = 0; i < HEIGHT_GAME; i++) {
 		for (int k = 0; k < WIDTH_GAME; k++) {
@@ -801,7 +811,23 @@ void display(int HP, int stats[5]) {
 		printf("\n");
 	}
 	
-	CELL_GAME[][]
+	gotoxy(188, 1); printf("STATUS");
+	gotoxy(180, 2); printf("Name");
+	gotoxy(200, 2); printf("%s", p_name);
+	gotoxy(180, 4); printf("HP");
+	gotoxy(200, 4); printf("%d", p_HP);
+	gotoxy(180, 5); printf("Strength");
+	gotoxy(200, 5); printf("%d", p_stats[0]);
+	gotoxy(180, 6); printf("Charming");
+	gotoxy(200, 6); printf("%d", p_stats[1]);
+	gotoxy(180, 7); printf("Endurance");
+	gotoxy(200, 7); printf("%d", p_stats[2]);
+	gotoxy(180, 8); printf("Intelligence");
+	gotoxy(200, 8); printf("%d", p_stats[3]);
+	gotoxy(180, 9); printf("Luck");
+	gotoxy(200, 9); printf("%d", p_stats[4]);
+	gotoxy(180, 10); printf("Money");
+	gotoxy(200, 10); printf("%d", p_money);
 }
 
 int main(void) {
@@ -809,8 +835,6 @@ int main(void) {
 	srand(time(NULL));
 
 	cell_deployment();
-
-	main_character player;
 
 	strcpy_s(player.name, 17, setting_name());
 
@@ -826,17 +850,18 @@ int main(void) {
 
 	player.LVL = 1;
 
-	player.HP = 50 + player.LVL * 10 + player.stats[2] * 5;
+	player.HP = (50 + player.LVL * 10 + player.stats[2] * 5);
 	
 	player.money = 100;
 
 	while (player.HP > 0) {
+
+		display(player.name, player.HP, *player.stats, player.money);
 		hit_the_road();
 		approach();
-		display(player.HP, player.stats);
+		system("cls");
+
 	}
-	
-	system("cls");
 
 	/*
 	chapter1_enter(player_class);
