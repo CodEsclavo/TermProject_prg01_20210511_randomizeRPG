@@ -1,5 +1,7 @@
 //포스트 아포칼립스 RPG
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <Windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,7 +9,9 @@
 #include <math.h>
 #include <time.h>
 #include <string.h>
+#include <conio.h>
 
+//게임 셀들의 크기
 #define HEIGHT_GAME 56
 #define WIDTH_GAME 210
 
@@ -84,7 +88,13 @@ void cell_deployment() {
 void clear_cell() {
 	for (int i = 1; i < 23; i++) {
 		for (int k = 1; k < 127; k++) {
-			printf(" ");
+			gotoxy(k, i); printf(" ");
+		}
+	}
+
+	for (int n = 33; n < 55; n++) {
+		for (int l = 1; l < 209; l++) {
+			gotoxy(l, n); printf(" ");
 		}
 	}
 }
@@ -99,7 +109,7 @@ int player_stats[6] = { 0 };
 struct main_character {
 	char name[17];
 	int LVL;
-	char class[20];
+	char class[10];
 	int stats[6];
 	int HP;
 	int money;
@@ -136,47 +146,24 @@ typedef struct {
 	int value;
 } meds;
 
-struct inventory {
-	int Weapons[10];
-	int Armours[10];
-	int Meds[10];
-} Inv;
-/*
-struct equipments {
-	wep;
-	armr;
-} equip;
-*/
-void cell_deployment();
+typedef struct {
+	wep Weapons[5];
+	armr Armours[5];
+	meds Meds[10];
+} inventory;
 
-int DICEROLL(int);
-void DICE_rolling();
-void check_N_confirm();
-int yes_or_no();
+typedef struct  {
+	wep weapons;
+	armr armours;
+} equipments;
 
-int LVL_scailing(char[], int);
-NPC creat_monster(int);
-wep weapons(int);
-armr armours(int);
-meds medications(int);
+typedef struct {
+	wep Weapons[2];
+	armr Armours[2];
+	meds Medications[3];
+} shop;
 
-int *stat_distribution(int[], int, char[]);
-char* set_name();
-char *set_class(char[]);
-struct main_character *initialize();
 
-void visit_shop();
-void meet_monster();
-void robbed();
-void meet_animal();
-void earn_item();
-
-void approach();
-void hit_the_road();
-void battle();
-
-int next_behave();
-void display(struct main_character);
 
 //주사위 굴리기
 int DICEROLL(int side) {
@@ -199,27 +186,27 @@ void DICE_rolling() {
 }
 
 //사항을 확인하고 결정
-void check_N_confirm() {
+void confirm() {
 
-	char submit[30];
+	gotoxy(5, 33); printf("엔터를 입력하여 넘어가기....");
 
-	printf("\n\n아무거나 입력하여 넘어가기....\n");
+	gotoxy(5, 34); char submit = _getch();
 
-	scanf_s("%s", submit, 30);
+	if (submit == "\r") {
 
-	printf("\nLoading.");
+		gotoxy(5, 36); printf("Loading.");
 
-	for (int i = 0; i < 7; i++) {
-		Sleep(400);
-		printf(".");
+		for (int i = 0; i < 7; i++) {
+			Sleep(400);
+			printf(".");
+		}
 	}
-
 }
 
 int yes_or_no() {
 	char choice[2] = { 0 };
-	printf("(Y or N)\n");
-	scanf_s("%s", &choice,2);
+	gotoxy(10, 33); printf("(Y or N)");
+	gotoxy(10, 34); scanf_s("%s", &choice,2);
 
 	if (choice[0] == 'Y' || choice[0] == 'y') {
 		return 1;
@@ -346,7 +333,16 @@ NPC creat_monster(int player_level) {
 wep weapons(int wepnum) {
 
 	//무기류
-	if (wepnum == 0) {
+	if (wepnum == -1) {
+		wep fist = {
+			"주먹",
+			5,
+			99999,
+			0
+		};
+	}
+
+	else if (wepnum == 0) {
 
 		wep knife = {
 		"칼",
@@ -597,8 +593,6 @@ meds medications(int mednum) {
 	}
 }
 
-
-
 //스탯 분배
 int *stat_distribution(int temp_stats[6], int point_remain, char player_name[17]) {
 
@@ -661,7 +655,7 @@ char* set_class(char player_name[17]) {
 
 	player_class = DICEROLL(6);
 
-	static char array[20] = "\0";
+	static char array[50] = "\0";
 
 	int* a = &array;
 
@@ -707,11 +701,11 @@ struct main_character* initialize() {
 
 	struct main_character* temp = malloc(sizeof(struct main_character));
 
-	strcpy_s(temp->name, 17, set_name());
+	strcpy(temp->name, set_name());
 
-	strcpy_s(temp->class, 20, set_class(temp->name));
+	strcpy(temp->class, set_class(temp->name));
 
-	check_N_confirm();
+	confirm();
 
 	system("cls");
 
@@ -721,13 +715,13 @@ struct main_character* initialize() {
 		player_stats[i] += 1;
 	}
 
-	int *temp_stats = stat_distribution(player_stats, 10, temp->name);
+	int *stats = stat_distribution(player_stats, 10, temp->name);
 
 	for (int i = 0; i < 6; i++) {
-		temp->stats[i] = temp_stats[i];
+		temp->stats[i] = stats[i];
 	}
 
-	check_N_confirm();
+	confirm();
 
 	temp->LVL = 1;
 
@@ -736,117 +730,7 @@ struct main_character* initialize() {
 	temp->money = 100;
 
 	return temp;
-}
 
-
-void approach() {
-
-	int encounter_location = rand() % 5 + 1;
-	int choice;
-
-	switch (encounter_location) {
-	case 1:
-		gotoxy(1, 1); printf("앞에 웬 판잣집이 있다.");
-		printf("안에서 기척이 느껴진다");
-		printf("다가가 보시겠습니까?");
-
-		choice = yes_or_no();
-
-		if (choice == 1) {
-
-
-		}
-
-		else {
-			printf("무엇을 하시겠습니까?");
-
-			printf("무언가 수상한 판잣집을 뒤로한채 발을 옮겼다.");
-
-		}
-
-		break;
-	case 2:
-		gotoxy(1, 1); printf("앞에 웬 폐건물이 있다.");
-		printf("들어가 보시겠습니까?");
-
-		choice = yes_or_no();
-
-		if (choice == 1) {
-			printf("가까이 다가갔더니 인기척이 느껴졌다.");
-
-		}
-
-		else {
-			printf("무엇을 하시겠습니까?");
-
-			printf("무언가 수상한 폐건물을 뒤로한채 발을 옮겼다.");
-
-		}
-
-		break;
-	case 3:
-		gotoxy(1, 1); printf("앞에 웬 멀쩡한 건물이/가 있다.");
-		printf("들어가 보시겠습니까?");
-
-		choice = yes_or_no();
-
-		if (choice == 1) {
-			printf("가까이 다가갔더니 인기척이 느껴졌다.");
-
-		}
-
-		else {
-			printf("무엇을 하시겠습니까?");
-
-			printf("무언가 수상한 멀쩡한 건물을 뒤로한채 발을 옮겼다.");
-
-		}
-
-		break;
-	case 4:
-		gotoxy(1, 1);	printf("앞에 웬 움막이 있다.");
-		printf("안에서 기척이 느껴진다");
-		printf("다가가 보시겠습니까?");
-
-		choice = yes_or_no();
-
-		if (choice == 1) {
-			printf("가까이 다가갔더니 인기척이 느껴졌다.");
-
-		}
-
-		else {
-			printf("무엇을 하시겠습니까?");
-
-			printf("무언가 수상한 움막을 뒤로한채 발을 옮겼다.");
-
-		}
-
-		break;
-	case 5:
-		gotoxy(1, 1); printf("앞에 웬 벙커가 있다.");
-		printf("들어가 보시겠습니까?");
-
-		choice = yes_or_no();
-
-		if (choice == 1) {
-			printf("가까이 다가갔더니 인기척이 느껴졌다.");
-
-		}
-
-		else {
-			printf("무엇을 하시겠습니까?");
-
-			printf("무언가 수상한 벙커를 뒤로한채 발을 옮겼다.");
-
-		}
-
-		break;
-	case 6:
-		gotoxy(1, 1); printf("앞 길거리에 무언가 있다.");
-
-		break;
-	}
 }
 
 void hit_the_road() {
@@ -877,19 +761,388 @@ void hit_the_road() {
 	clear_cell();
 } 
 
-void battle(struct main_character temp) {
+void battle(struct main_character* player, equipments* equip, inventory* inv, NPC monster) {
 
-	NPC monster = creat_monster(temp.LVL);
+	clear_cell();
+
+	int select;
+
+	int use_num;
+
+	while (player->HP != 0 || monster.HP != 0) {
+
+		gotoxy(10, 2); printf("무얼 하시겠습니까?");
+
+		gotoxy(10, 3); printf("1. 공격 2. 의약품 3. 도망");
+
+		gotoxy(10, 34); scanf_s("%d", &select);
+
+		clear_cell();
+		if (select == 1) {
+
+			gotoxy(10, 1); printf("%s의 공격, %d의 피해를 입혔다", player->name, equip->weapons.atk);
+
+			gotoxy(10, 3); printf("%s의 공격, %d의 피해를 받았다", monster.name, equip->armours.def);
+
+			monster.HP -= (player->stats[0] + equip->weapons.atk);
+
+			player->HP -= (monster.stats[0] - equip->armours.def);
+
+			confirm();
+
+			clear_cell();
+		}
+
+		else if (select == 2) {
+			int num_item = 0;
+			for (int i = 0; i < 10; i++) {
+				if (inv->Meds[i].name != NULL) {
+					num_item++;
+				}
+			}
+
+			if (num_item == 0) {
+				gotoxy(10, 1); printf("소지하고있는 의약품이 없습니다.");
+
+				confirm();
+
+				clear_cell();
+
+				continue;
+			}
+
+			gotoxy(10, 1); printf("의약품");
+
+			for (int i = 0; i < num_item; i++) {
+				if (i <= 5) {
+					gotoxy(10 + i * 5, 3); printf("%d. %s", i, inv->Meds[i].name);
+				}
+				else {
+					gotoxy(10 + i * 5, 4); printf("%d. %s", i, inv->Meds[i].name);
+				}
+			}
+
+			gotoxy(10, 6); printf("사용할 아이템 선택");
+
+			gotoxy(10, 34); scanf_s("%d", &use_num);
+
+			if (player->HP += inv->Meds[use_num - 1].heal_amount <= 50 + player->LVL * 10 + player->stats[3] * 5) {
+
+				gotoxy(10, 1); printf("%d의 체력을 회복했습니다.", inv->Meds[use_num - 1].heal_amount);
+
+				player->HP += inv->Meds[use_num - 1].heal_amount;
+
+				confirm();
+			}
+
+			else {
+
+				gotoxy(10, 1); printf("%d의 체력을 회복했습니다.", player->LVL * 10 + player->stats[3] * 5 - player->HP);
+
+				player->HP = 50 + player->LVL * 10 + player->stats[3] * 5;
+
+				confirm();
+			}
+
+			clear_cell();		
+
+			continue;
+		}
+
+		else {
+			break;
+		}
+	}
+
+	if (player->HP <= 0) {
+
+		clear_cell();
+
+		gotoxy(10, 1); printf("!!!%s가 사망했습니다!!!", player->name);
+
+		gotoxy(10, 2); printf("GAME OVER");
+
+		confirm();
+	}
+
+	else if (monster.HP <= 0) {
+		clear_cell();
+		gotoxy(10, 1); printf("%s를 물리쳤다", monster.name);
+		gotoxy(10, 2); printf("%d골드를 얻었다", monster.money);
+	}
+
+	player->money += monster.money;
 
 }
 
 //인카운터 설정
-void visit_shop() {
-	gotoxy(10, 1); printf("선반에 여러가지 물건이 진열되어있다, 상점인 듯하다\n");
+void visit_shop(struct main_character* player, inventory* inv) {
+
+	wep blank_w = { NULL };
+
+	armr blank_a = { NULL };
+
+	meds blank_m = { NULL };
+
+	shop product = { NULL };
+
+	clear_cell();
+
+	gotoxy(10, 1); printf("선반에 여러가지 물건이 진열되어있다, 상점인 듯하다");
 	
+	while (TRUE) {
+
+		int choice, type, select, buy, sell, count = 0;
+
+		gotoxy(10, 2); printf("무엇을 하시겠습니까?");
+		gotoxy(10, 4); printf("1. 구매하기 2. 판매하기 3.나가기 4.협박하기");
+
+		gotoxy(10, 34); scanf_s("%d", &choice);
+
+		clear_cell();
+
+		if (choice == 1) {
+
+			gotoxy(10, 1); printf("무엇을 구매하시겠습니까?");
+			gotoxy(10, 2); printf("1.무기 2.방어구 3.의약품");
+
+			gotoxy(10, 34); scanf_s("%d", &type);
+
+			if (type == 1) {
+				for (int i = 0; i < 2; i++) {
+					product.Weapons[i] = weapons(DICEROLL(9) - 1);
+					gotoxy(10, 1); printf("무기류");
+					gotoxy(10, 2); printf("%d. %s", i + 1, product.Weapons[i].name);
+
+					gotoxy(10, 34); scanf_s("%d", &buy);
+
+					if (product.Weapons[buy].value > player->money) {
+						clear_cell();
+						gotoxy(10, 1); printf("돈이 부족합니다!");
+						confirm();
+						continue;
+					}
+
+					else {
+
+						clear_cell();
+
+						for (int i = 0; i < 5; i++) {
+							if (inv->Weapons[i].name != NULL) {
+								count++;
+							}
+
+							if (count == 5) {
+								gotoxy(10, 1); printf("인벤토리의 공간이 부족합니다!");
+								continue;
+							}
+
+							else {
+								for (int i = 0; i < 5; i++) {
+									if (inv->Weapons[i].name == NULL) {
+										inv->Weapons[i] = product.Weapons[buy];
+										gotoxy(10, 1); printf("%s를 구매했습니다", inv->Weapons[i].name);
+										confirm();
+									}
+								}
+								continue;
+							}
+						}
+					}
+				}
+			}
+
+			else if (type == 2) {
+				for (int i = 0; i < 2; i++) {
+					product.Armours[i] = armours(DICEROLL(5) - 1);
+					gotoxy(10, 1); printf("방어구류");
+					gotoxy(10, 2); printf("%d. %s", i + 1, product.Armours[i].name);
+
+					gotoxy(10, 34); scanf_s("%d", &buy);
+
+					if (product.Armours[buy].value > player->money) {
+						clear_cell();
+						gotoxy(10, 1); printf("돈이 부족합니다!");
+						confirm();
+						continue;
+					}
+
+					else {
+
+						clear_cell();
+
+						for (int i = 0; i < 5; i++) {
+							if (inv->Armours[i].name != NULL) {
+								count++;
+							}
+
+							if (count == 5) {
+								gotoxy(10, 1); printf("인벤토리의 공간이 부족합니다!");
+								continue;
+							}
+
+							else {
+								for (int i = 0; i < 5; i++) {
+									if (inv->Armours[i].name == NULL) {
+										inv->Armours[i] = product.Armours[buy];
+										gotoxy(10, 1); printf("%s를 구매했습니다", inv->Armours[i].name);
+										confirm();
+									}
+								}
+								continue;
+							}
+						}
+					}
+				}
+			}
+
+			else {
+				for (int i = 0; i < 3; i++) {
+					product.Medications[i] = medications(DICEROLL(4));
+					gotoxy(10, 1); printf("의약품");
+					gotoxy(10, 2); printf("%d. %s", i + 1, product.Medications[i].name);
+
+					gotoxy(10, 34); scanf_s("%d", &buy);
+
+					if (product.Medications[buy].value > player->money) {
+						clear_cell();
+						gotoxy(10, 1); printf("돈이 부족합니다!");
+						confirm();
+						continue;
+					}
+
+					else {
+
+						clear_cell();
+
+						for (int i = 0; i < 10; i++) {
+							if (inv->Meds[i].name != NULL) {
+								count++;
+							}
+
+							if (count == 5) {
+								gotoxy(10, 1); printf("인벤토리의 공간이 부족합니다!");
+								continue;
+							}
+
+							else {
+								for (int i = 0; i < 10; i++) {
+									if (inv->Meds[i].name == NULL) {
+										inv->Meds[i] = product.Medications[buy];
+										gotoxy(10, 1); printf("%s를 구매했습니다", inv->Meds[i].name);
+										confirm();
+									}
+								}
+								continue;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		else if (choice == 2) {
+
+			gotoxy(10, 1); printf("뭘 파시겠습니다");
+			gotoxy(10, 3); printf("1. 무기");
+			gotoxy(10, 4); printf("2. 방어구");
+			gotoxy(10, 5); printf("3. 의약품");
+			gotoxy(10, 7); printf("나가기: BackSpace");
+
+			gotoxy(10, 34); select = _getch();
+
+			clear_cell();
+
+			if (select == 1) {
+				gotoxy(10, 1); for (int i = 0; i < 5; i++) {
+					printf("%d. %s ", i + 1, inv->Weapons[i].name);
+				}
+				gotoxy(10, 3); printf("판매할 물건을 골라주세요");
+				gotoxy(10, 4); printf("나가기: BackSpace");
+				gotoxy(10, 34); sell = _getch();
+
+				if (sell == '\b') {
+					continue;
+				}
+
+				player->money += inv->Weapons[sell].value;
+
+				clear_cell();
+				gotoxy(10, 1); printf("%s를 팔아 %d골드를 벌었다", inv->Weapons[sell].name, inv->Weapons[sell].value);
+
+				confirm();
+				inv->Weapons[sell] = blank_w;
+
+				continue;
+			}
+			else if (select == 2) {
+				gotoxy(10, 1); for (int i = 0; i < 5; i++) {
+					printf("%d. %s ", i + 1, inv->Armours[i].name);
+				}
+				gotoxy(10, 3); printf("판매할 물건을 골라주세요");
+				gotoxy(10, 4); printf("나가기: BackSpace");
+				gotoxy(10, 34); sell = _getch();
+
+				if (sell == '\b') {
+					continue;
+				}
+
+				player->money += inv->Armours[sell].value;
+				clear_cell();
+				gotoxy(10, 1); printf("%s를 팔아 %d골드를 벌었다", inv->Armours[sell].name, inv->Armours[sell].value);
+
+				confirm();
+				inv->Armours[sell] = blank_a;
+
+				continue;
+			}
+			else if (select == 3) {
+				gotoxy(10, 1); for (int i = 0; i < 10; i++) {
+					printf("%d. %s ", i + 1, inv->Meds[i].name);
+				}
+				gotoxy(10, 3); printf("판매할 물건을 골라주세요");
+				gotoxy(10, 4); printf("나가기: BackSpace");
+				gotoxy(10, 34); sell = _getch();
+
+				if (sell == '\b') {
+					continue;
+				}
+
+				player->money += inv->Meds[sell].value;
+				clear_cell();
+				gotoxy(10, 1); printf("%s를 팔아 %d골드를 벌었다", inv->Meds[sell].name, inv->Meds[sell].value);
+
+				confirm();
+				inv->Meds[sell] = blank_m;
+
+				continue;
+			}
+			else {
+				gotoxy(10, 1); printf("밖으로 나왔다");
+				confirm();
+				break;
+			}
+		}
+
+		else if (choice == 3) {
+			gotoxy(10, 1); printf("밖으로 나왔다");
+			confirm();
+			break;
+		}
+
+		else {
+
+		}
+	}
 }
 
-void meet_monster() {
+void meet_monster(struct main_character* player, equipments* equip, inventory* inv) {
+
+	NPC monster = creat_monster(player->LVL);
+
+	gotoxy(10, 1); printf("%s가 나타났다.", monster.name);
+
+	battle(player, equip, inv, monster);
 
 }
 
@@ -897,20 +1150,376 @@ void robbed() {
 
 }
 
-void meet_animal() {
+//아이템 획득
+void earn_item(inventory* inv) {
 
+	int earn;
+
+	while (TRUE) {
+
+		clear_cell();
+
+		gotoxy(10, 1); printf("물건이 떨어져 있다. 주우시겠습니까?");
+
+		earn = yes_or_no();
+
+		if (earn != 1) {
+
+			clear_cell();
+
+			gotoxy(10, 1); printf("뭔가 좀 꺼림직하다, 그냥 가자.");
+
+			confirm();
+
+			break;
+		}
+
+		int item_type = DICEROLL(3);
+
+		int item_num;
+
+		int inventory_filled = 0;
+
+		int inv_num;
+
+		int clear_inv;
+
+		if (item_type == 1) {
+
+			item_num = DICEROLL(10) - 1;
+
+			wep new_wep = weapons(item_num);
+
+			for (int i = 0; i < 5; i++) {
+				if (inv->Weapons[i].name != NULL) {
+					inventory_filled++;
+				}
+			}
+
+			if (inventory_filled == 5) {
+
+				clear_cell();
+				gotoxy(10, 1); printf("인벤토리에 공간이 없습니다.");
+				gotoxy(10, 2); printf("다른 아이템을 버리시겠습니까?");
+				clear_inv = yes_or_no();
+
+				if (clear_inv == 1) {
+					clear_cell();
+					gotoxy(10, 1); printf("버릴 아이템을 선택해주세요.");
+					gotoxy(10, 2); for (int i = 0; i < 5; i++) {
+						printf("%d. %s ", i + 1, inv->Weapons[i].name);
+					}
+
+					gotoxy(10, 4); scanf_s("%d", &clear_inv);
+
+					inv->Weapons[clear_inv] = new_wep;
+
+					clear_cell();
+					gotoxy(10, 1); printf("%s를 습득했습니다.", inv->Weapons[clear_inv].name);
+					confirm();
+				}
+
+				else {
+					break;
+				}
+			}
+
+			else {
+				for (int i = 0; i < 5; i++) {
+					if (inv->Weapons[i].name == NULL) {
+						inv->Weapons[i] = new_wep;
+						inv_num -= i;
+						break;
+					}
+				}
+				gotoxy(10, 3); printf("%s를 획득했습니다.", inv->Weapons[inv_num].name);
+			}
+
+		}
+
+		else if (item_type == 2) {
+
+			item_num = DICEROLL(6) - 1;
+
+			armr new_armr = armours(item_num);
+
+			for (int i = 0; i < 5; i++) {
+				if (inv->Armours[i].name != NULL) {
+					inventory_filled++;
+				}
+			}
+
+			if (inventory_filled == 5) {
+
+				clear_cell();
+				gotoxy(10, 1); printf("인벤토리에 공간이 없습니다.");
+				gotoxy(10, 2); printf("다른 아이템을 버리시겠습니까?");
+				clear_inv = yes_or_no();
+
+				if (clear_inv == 1) {
+					clear_cell();
+					gotoxy(10, 1); printf("버릴 아이템을 선택해주세요.");
+					gotoxy(10, 2); for (int i = 0; i < 5; i++) {
+						printf("%d. %s ", i + 1, inv->Armours[i].name);
+					}
+
+					gotoxy(10, 4); scanf_s("%d", &clear_inv);
+
+					inv->Armours[clear_inv] = new_armr;
+
+					clear_cell();
+					gotoxy(10, 1); printf("%s를 습득했습니다.", inv->Armours[clear_inv].name);
+					confirm();
+				}
+
+			else {
+				for (int i = 0; i < 5; i++) {
+					if (inv->Armours[i].name == NULL) {
+						inv->Armours[i] = new_armr;
+						inv_num -= i;
+						break;
+					}
+				}
+				gotoxy(10, 3); printf("%s를 획득했습니다.", inv->Armours[inv_num].name);
+			}
+		}
+	}
+
+		else {
+
+			item_num = DICEROLL(5) - 1;
+
+			meds new_med = medications(item_num);
+
+			for (int i = 0; i < 10; i++) {
+				if (inv->Meds[i].name != NULL) {
+					inventory_filled++;
+				}
+			}
+
+			if (inventory_filled == 10) {
+
+				clear_cell();
+				gotoxy(10, 1); printf("인벤토리에 공간이 없습니다.");
+				gotoxy(10, 2); printf("다른 아이템을 버리시겠습니까?");
+				clear_inv = yes_or_no();
+
+				if (clear_inv == 1) {
+					clear_cell();
+					gotoxy(10, 1); printf("버릴 아이템을 선택해주세요.");
+					gotoxy(10, 2); for (int i = 0; i < 10; i++) {
+						printf("%d. %s ", i + 1, inv->Meds[i].name);
+					}
+
+					gotoxy(10, 4); scanf_s("%d", &clear_inv);
+
+					inv->Meds[clear_inv] = new_med;
+
+					clear_cell();
+					gotoxy(10, 1); printf("%s를 습득했습니다.", inv->Meds[clear_inv].name);
+					confirm();
+				}
+
+				else {
+					break;
+				}
+			}
+
+			else {
+				for (int i = 0; i < 10; i++) {
+					if (inv->Meds[i].name == NULL) {
+						inv->Meds[i] = new_med;
+						inv_num -= i;
+						break;
+					}
+				}
+				gotoxy(10, 3); printf("%s를 획득했습니다.", inv->Meds[inv_num].name);
+			}
+		}
+	}
 }
 
-//아이템 획득
-void earn_item() {
+void approach(struct main_character* player, equipments* equip, inventory* inv) {
 
+	int encounter_location = rand() % 4 + 1;
+	int choice;
+
+	switch (encounter_location) {
+	case 1:
+		gotoxy(10, 1); printf("앞에 웬 판잣집이 있다. 안에서 기척이 느껴진다.");
+		gotoxy(10, 2); printf("다가가 보시겠습니까?");
+
+		int encounter;
+
+		choice = yes_or_no();
+
+		clear_cell();
+
+		if (choice == 1) {
+
+			encounter = DICEROLL(4);
+
+			switch (encounter) {
+			case 1:
+				visit_shop(player, inv);
+				break;
+			case 2:
+				meet_monster(player, equip, inv);
+				break;
+			case 3:
+				robbed();
+				break;
+			case 4:
+				earn_item(inv);
+				break;
+			}
+
+		}
+
+		else {
+			gotoxy(10, 1); printf("수상한 판잣집을 뒤로한채 길을 떠났다");
+			confirm();
+		}
+		break;
+
+	case 2:
+		gotoxy(10, 1); printf("앞에 웬 폐건물이 있다.");
+		gotoxy(10, 2); printf("들어가 보시겠습니까?");
+
+		choice = yes_or_no();
+
+		if (choice == 1) {
+
+			encounter = DICEROLL(4);
+
+			switch (encounter) {
+			case 1:
+				visit_shop(player, inv);
+				break;
+			case 2:
+				meet_monster(player, equip, inv);
+				break;
+			case 3:
+				robbed();
+				break;
+			case 4:
+				earn_item(inv);
+				break;
+			}
+		}
+
+		else {
+			gotoxy(10, 1); printf("수상한 폐건물을 뒤로한채 길을 떠났다");
+			confirm();
+		}
+		break;
+
+	case 3:
+		gotoxy(10, 1); printf("앞에 웬 멀쩡한 건물이 있다.");
+		gotoxy(10, 2); printf("들어가 보시겠습니까?");
+
+		choice = yes_or_no();
+
+		if (choice == 1) {
+
+			encounter = DICEROLL(4);
+
+			switch (encounter) {
+			case 1:
+				visit_shop(player, inv);
+				break;
+			case 2:
+				meet_monster(player, equip, inv);
+				break;
+			case 3:
+				robbed();
+				break;
+			case 4:
+				earn_item(inv);
+				break;
+			}
+		}
+
+		else {
+			gotoxy(10, 1); printf("수상한 건물을 뒤로한채 길을 떠났다");
+			confirm();
+		}
+		break;
+
+	case 4:
+		gotoxy(10, 1);	printf("앞에 웬 움막이 있다.");
+		printf(" 안에서 기척이 느껴진다");
+		gotoxy(10, 2); printf("다가가 보시겠습니까?");
+
+		choice = yes_or_no();
+
+		if (choice == 1) {
+
+			encounter = DICEROLL(4);
+
+			switch (encounter) {
+			case 1:
+				visit_shop(player, inv);
+				break;
+			case 2:
+				meet_monster(player, equip, inv);
+				break;
+			case 3:
+				robbed();
+				break;
+			case 4:
+				earn_item(inv);
+				break;
+			}
+		}
+
+		else {
+			gotoxy(10, 1); printf("움막을 뒤로한채 길을 떠났다");
+			confirm();
+		}
+
+		break;
+
+	case 5:
+		gotoxy(10, 1); printf("앞에 군용벙커가 있다.");
+		gotoxy(10, 2); printf("들어가 보시겠습니까?");
+
+		choice = yes_or_no();
+
+		if (choice == 1) {
+
+			encounter = DICEROLL(4);
+
+			switch (encounter) {
+			case 1:
+				visit_shop(player, inv);
+				break;
+			case 2:
+				meet_monster(player, equip, inv);
+				break;
+			case 3:
+				robbed();
+				break;
+			case 4:
+				earn_item(inv);
+				break;
+			}
+		}
+
+		else {
+			gotoxy(10, 1); printf("벙커를 뒤로한채 길을 떠났다");
+			confirm();
+		}
+
+		break;
+	}
 }
 
 int next_behave() {
 
 	int X;
 
-	gotoxy(10, 1); printf("무얼 하시겠습니까?\n");
+	gotoxy(10, 1); printf("무얼 하시겠습니까?");
 	gotoxy(10, 3); printf("1. 갈 길 가기");
 	gotoxy(10, 4); printf("2. 소지품 확인");
 	gotoxy(10, 5); printf("3. 휴식하기");
@@ -933,7 +1542,7 @@ int next_behave() {
 			gotoxy(k, 1); printf(" ");
 		}
 
-		gotoxy(10, 1); printf("무얼 하시겠습니까?\n");
+		gotoxy(10, 1); printf("무얼 하시겠습니까?");
 		gotoxy(10, 3); printf("1. 갈 길 가기");
 		gotoxy(10, 4); printf("2. 소지품 확인");
 		gotoxy(10, 5); printf("3. 휴식하기");
@@ -955,47 +1564,226 @@ int next_behave() {
 
 }
 
-void player_action() {
+void player_action(struct main_character* player, equipments* equip_p, inventory* inv_p) {
 
-	int temp = next_behave();
+	int running = TRUE;
 
-	switch (temp) {
-	case 1: 
-		hit_the_road();
-		approach();
-		break;
+	while (running) {
 
-	case 2:
+		int temp = next_behave();
 
-		break;
-
-	case 3:
-		gotoxy(10, 1); printf("휴식중.");
-		for (int i = 0; i < 7; i++) {
-			Sleep(250);
-			printf(".");
+		if (temp == 1) {
+			hit_the_road();
+			approach(player, equip_p, inv_p);
+			break;
 		}
-		printf("50의 체력을 회복했습니다.");
-		player.HP += 50;
-		check_N_confirm();
-		clear_cell();
-		break;
 
-	case 4:
-		printf("게임을 종료하시겠습니까?");
-		int close = yes_or_no();
+		else if (temp == 2) {
+			clear_cell();
 
-		if (close == 1) {
-			exit(0);
+			int chk_belong = TRUE;
+
+			int select;
+
+			while (chk_belong) {
+
+				gotoxy(10, 1); printf("소지품 확인");
+				gotoxy(10, 3); printf("1. 무기");
+				gotoxy(10, 4); printf("2. 방어구");
+				gotoxy(10, 5); printf("3. 의약품");
+				gotoxy(10, 7); printf("나가기: BackSpace");
+
+				gotoxy(10, 8); select = _getch();
+
+				clear_cell();
+
+				if (select == 1) {
+					gotoxy(20, 1); printf("무기류");
+					gotoxy(10, 3);
+					for (int i = 0; i < 5; i++) {
+						if (inv_p->Weapons[i].name == NULL) {
+							printf(" ");
+						}
+						else {
+							printf("%d,%s ", i + 1, inv_p->Weapons[i].name);
+						}
+					}
+
+					wep temp = { NULL };
+
+					gotoxy(10, 5); printf("무기를 장착하려면 해당 번호를 입력하세요");
+					gotoxy(10, 6); printf("인벤토리에서 나가려면 \'<-\'를 누르세요");
+					gotoxy(10, 8); int wep_s = _getch();
+
+					if (wep_s == 1) {
+						temp = equip_p->weapons;
+						equip_p->weapons = inv_p->Weapons[0];
+						inv_p->Weapons[0] = temp;
+						continue;
+					}
+
+					else if (wep_s == 2) {
+						temp = equip_p->weapons;
+						equip_p->weapons = inv_p->Weapons[1];
+						inv_p->Weapons[1] = temp;
+						continue;
+					}
+
+					else if (wep_s == 3) {
+						temp = equip_p->weapons;
+						equip_p->weapons = inv_p->Weapons[2];
+						inv_p->Weapons[2] = temp;
+						continue;
+					}
+
+					else if (wep_s == 4) {
+						temp = equip_p->weapons;
+						equip_p->weapons = inv_p->Weapons[3];
+						inv_p->Weapons[3] = temp;
+						continue;
+					}
+
+					else if (wep_s == 5) {
+						temp = equip_p->weapons;
+						equip_p->weapons = inv_p->Weapons[4];
+						inv_p->Weapons[4] = temp;
+						continue;
+					}
+
+					else if (wep_s == '\b') {
+						clear_cell();
+						continue;
+					}
+
+					else {
+						clear_cell();
+						gotoxy(10, 1); printf("다시 입력하세요");
+						continue;
+					}
+				}
+
+				else if (select == 2) {
+					gotoxy(20, 1); printf("방어구류");
+					gotoxy(10, 3);
+					for (int i = 0; i < 5; i++) {
+						if (inv_p->Weapons[i].name == NULL) {
+							printf(" ");
+						}
+						else {
+							printf("%d,%s ", i + 1, inv_p->Weapons[i].name);
+						}
+					}
+
+					armr temp = { NULL };
+
+					gotoxy(10, 5); printf("방어구를 장착하려면 해당 번호를 입력하세요");
+					gotoxy(10, 6); printf("인벤토리에서 나가려면 \'<-\'를 누르세요");
+					gotoxy(10, 8); int armr_s = _getch();
+
+					if (armr_s == 1) {
+						temp = equip_p->armours;
+						equip_p->armours = inv_p->Armours[0];
+						inv_p->Armours[0] = temp;
+						clear_cell();
+						continue;
+					}
+
+					else if (armr_s == 2) {
+						temp = equip_p->armours;
+						equip_p->armours = inv_p->Armours[1];
+						inv_p->Armours[1] = temp;
+						clear_cell();
+						continue;
+					}
+
+					else if (armr_s == 3) {
+						temp = equip_p->armours;
+						equip_p->armours = inv_p->Armours[2];
+						inv_p->Armours[2] = temp;
+						clear_cell();
+						continue;
+					}
+
+					else if (armr_s == 4) {
+						temp = equip_p->armours;
+						equip_p->armours = inv_p->Armours[3];
+						inv_p->Armours[3] = temp;
+						clear_cell();
+						continue;
+					}
+
+					else if (armr_s == 5) {
+						temp = equip_p->armours;
+						equip_p->armours = inv_p->Armours[4];
+						inv_p->Armours[4] = temp;
+						clear_cell();
+						continue;
+					}
+
+					else if (armr_s == '\b') {
+						clear_cell();
+						continue;
+					}
+
+					else {
+						clear_cell();
+						gotoxy(10, 1); printf("다시 입력하세요");
+						continue;
+					}
+				}
+
+				else if (select == 3) {
+
+				}
+
+				else if (select == '\b') {
+					running = FALSE;
+					clear_cell();
+					break;
+				}
+
+				else {
+					clear_cell();
+					gotoxy(10, 1); printf("다시 입력하세요");
+					continue;
+				}
+			}
+		}
+
+		else if (temp == 3) {
+			clear_cell();
+			gotoxy(10, 1); printf("휴식중.");
+			for (int i = 0; i < 7; i++) {
+				Sleep(250);
+				printf(".");
+			}
+			gotoxy(10, 2); printf("50의 체력을 회복했습니다.");
+			player->HP += 50;
+			confirm();
+			clear_cell();
+			break;
 		}
 
 		else {
 
-		}
+			printf("게임을 종료하시겠습니까?");
+			int close = yes_or_no();
 
-		break;
+			if (close == 1) {
+				system("cls");
+				exit(0);
+			}
+
+			else {
+				clear_cell();
+				continue;
+			}
+
+			break;
+		}
 	}
 }
+
 
 void display(struct main_character *temp) {
 
@@ -1045,14 +1833,20 @@ int main(void) {
 	cell_deployment();
 
 	struct main_character *player = initialize();
+	inventory inv = { NULL };
+	equipments equip = {
+		weapons(-1),
+		armours(0)
+	};
+
+	system("cls");
 
 	while (player->HP > 0) {
 
 		display(player);
-		player_action();
+		player_action(player, &inv, &equip);
 		system("cls");
 
 	}
-
 	return 0;
 }
