@@ -24,8 +24,6 @@
 #define HEIGHT_BEHAVE 24
 #define WIDTH_BEHAVE 210
 
-#define LVLup_stats 3
-
 char CELL_GAME[HEIGHT_GAME][WIDTH_GAME] = { ' ' };
 
 //좌표 지정
@@ -108,9 +106,6 @@ int player_stats[6] = { 0 };
 
 struct main_character {
 	char name[17];
-	int LVL;
-	char class[10];
-	int stats[6];
 	int HP;
 	int Distance;
 };
@@ -403,50 +398,6 @@ armr* armours(int defnum) {
 
 }
 
-//스탯 분배
-int *stat_distribution(int temp_stats[6], int point_remain, char player_name[17]) {
-
-	printf("\n투자할 스탯과 수치를 입력하세요. (point remain : %d)\n(1:힘 2:화술 3:지구력 4:지능 5:행운)\n( ex) 1 2 : 힘 + 2 )\n", point_remain);
-
-	*temp_stats = malloc(sizeof(int) * 6);
-
-	int stat_points = point_remain;
-	int invested_point = 0;
-	int select_stat;
-	int used_point = 0;
-
-	while (invested_point != stat_points) {
-
-		scanf_s("%d %d", &select_stat, &used_point);
-
-		if (invested_point + used_point > stat_points) {
-			while (invested_point + used_point > stat_points) {
-				printf("!!!WARNING!!!\n!!!stat point overflow!!!");
-				Sleep(1000);
-				printf("\n다시 입력하세요\n");
-				scanf_s("%d %d", &select_stat, &used_point);
-			}
-		}
-
-		if (select_stat < 1 || select_stat > 5) {
-			while (select_stat < 1 || select_stat > 5) {
-				printf("!!!WARNING!!!\n!!!stat index error!!!");
-				Sleep(1000);
-				printf("\n다시 입력하세요\n");
-				scanf_s("%d %d", &select_stat, &used_point);
-			}
-		}
-
-		temp_stats[select_stat] += used_point;
-		invested_point += used_point;
-		printf("\n사용한 포인트 : %d, 잔여 포인트 : %d\n", invested_point, stat_points - invested_point);
-	}
-
-	printf("\n분배 완료!\n\n%s의 능력치\n|| 힘 : %d || 화술 : %d || 지구력 : %d || 지능 : %d || 행운 : %d ||\n", player_name, temp_stats[1], temp_stats[2], temp_stats[3], temp_stats[4], temp_stats[5]);
-
-	return temp_stats;
-}
-
 //게임을 시작하고 캐릭터 생성
 char* set_name() {
 
@@ -469,25 +420,9 @@ struct main_character* initialize() {
 
 	system("cls");
 
-	printf("###초기 스탯을 설정합니다.###\n");
-
-	for (int i = 0; i < 6; i++) {
-		player_stats[i] += 1;
-	}
-
-	int *stats = stat_distribution(player_stats, 10, temp->name);
-
-	for (int i = 0; i < 6; i++) {
-		temp->stats[i] = stats[i];
-	}
-
-	confirm();
-
-	temp->LVL = 1;
-
-	temp->HP = (50 + temp->LVL * 10 + temp->stats[3] * 5);
-
 	temp->Distance = 137;
+
+	temp->HP = 50 + (137 - temp->Distance) * 5;
 
 	return temp;
 
@@ -550,7 +485,7 @@ void battle(struct main_character* player) {
 		break;
 	}
 
-	int monster_HP = rand() % 300 + player->LVL * 25;
+	int monster_HP = rand() % 300 + (137 - player->Distance);
 
 	int monster_atk = rand() % 30;
 
@@ -607,11 +542,11 @@ void battle(struct main_character* player) {
 				player->HP -= (monster_atk - armour.def);
 			}
 
-			monster_HP -= (player->stats[0] + weapon.atk);
+			monster_HP -= ((137 - player->Distance) * 5 + weapon.atk);
 
 			gotoxy(50, 7); printf("%s의 체력: %d", monster, monster_HP);
 
-			gotoxy(195, 9); printf("%d/%d", player->HP, 50 + player->LVL * 10 + player->stats[3] * 5);
+			gotoxy(195, 9); printf("%d/%d", player->HP, 50 + (137 - player->Distance));
 
 			confirm();
 
@@ -674,8 +609,8 @@ void robbed(struct main_character* player) {
 
 	struct NPC robber = {
 		"강도",
-		rand() % 10 - 5 + player->LVL,
-		rand() % 300 + player->LVL * 25
+		rand() % 10 - 5 + (137 - player->Distance),
+		rand() % 300 + (137 - player->Distance) * 15
 	};
 
 	clear_cell();
@@ -731,13 +666,11 @@ void robbed(struct main_character* player) {
 				player->HP -= (robber.LVL * 5 - armour.def);
 			}
 
-			robber.HP -= (player->stats[0] + weapon.atk);
-
-			player->HP -= (robber.LVL * 5 - armour.def);
+			robber.HP -= ((137 - player->Distance) + weapon.atk);
 
 			gotoxy(50, 3); printf("강도의 체력: %d", robber.HP);
 
-			gotoxy(195, 9); printf("%d/%d", player->HP, 50 + player->LVL * 10 + player->stats[3] * 5);
+			gotoxy(195, 9); printf("%d/%d", player->HP, 50 + (137 - player->Distance) * 5);
 
 			confirm();
 
@@ -788,13 +721,36 @@ void robbed(struct main_character* player) {
 	}
 }
 
-void approach(struct main_character* player) {
-
-	int encounter_location = rand() % 4 + 1;
+void sleeping(struct main_character* player) {
+	gotoxy(10, 1); printf("안쪽은 생각보다 깔끔하다, 잠자리로는 안성맞춤인거같다");
+	gotoxy(10, 2); printf("휴식하시겠습니까?");
 	int choice;
 
-	switch (encounter_location) {
-	case 1:
+	choice = yes_or_no();
+
+	clear_cell();
+
+	if (choice == 1) {
+		player->HP += 100;
+		gotoxy(10, 1); printf("푹 잤더니 기운이 넘친다");
+		confirm();
+		clear_cell();
+	}
+
+	else {
+		player->Distance--;
+		gotoxy(10, 1); printf("휴식하기엔 힘이 넘쳐흐른다");
+		confirm();
+		clear_cell();
+	}
+}
+
+void approach(struct main_character* player) {
+
+	int encounter_location = rand() % 100;
+	int choice;
+
+	if (encounter_location >= 1 && encounter_location <= 50) {
 		gotoxy(10, 1); printf("앞에 웬 판잣집이 있다. 안에서 기척이 느껴진다.");
 		gotoxy(10, 2); printf("다가가 보시겠습니까?");
 
@@ -804,7 +760,9 @@ void approach(struct main_character* player) {
 
 		if (choice == 1) {
 
-			encounter = DICEROLL(2);
+			clear_cell();
+
+			encounter = DICEROLL(3);
 
 			switch (encounter) {
 			case 1:
@@ -812,6 +770,9 @@ void approach(struct main_character* player) {
 				break;
 			case 2:
 				robbed(player);
+				break;
+			case 3:
+				sleeping(player);
 				break;
 			}
 
@@ -822,17 +783,21 @@ void approach(struct main_character* player) {
 			gotoxy(10, 1); printf("수상한 판잣집을 뒤로한채 길을 떠났다");
 			confirm();
 		}
-		break;
+	}
 
-	case 2:
+	else if (encounter_location > 50 && encounter_location <= 75) {
 		gotoxy(10, 1); printf("앞에 웬 폐건물이 있다.");
 		gotoxy(10, 2); printf("들어가 보시겠습니까?");
+
+		int encounter;
 
 		choice = yes_or_no();
 
 		if (choice == 1) {
 
-			encounter = DICEROLL(4);
+			clear_cell();
+
+			encounter = DICEROLL(3);
 
 			switch (encounter) {
 			case 1:
@@ -840,6 +805,9 @@ void approach(struct main_character* player) {
 				break;
 			case 2:
 				robbed(player);
+				break;
+			case 3:
+				sleeping(player);
 				break;
 			}
 		}
@@ -849,24 +817,57 @@ void approach(struct main_character* player) {
 			gotoxy(10, 1); printf("수상한 폐건물을 뒤로한채 길을 떠났다");
 			confirm();
 		}
-		break;
+	}
 
-	case 3:
-		gotoxy(10, 1); printf("길가에 8기통 인터셉터가 서있다");
+	else if (encounter_location == 100) {
+		gotoxy(10, 1); printf("길가에 검은색 인터셉터가 서있다");
 		gotoxy(10, 2); printf("가까이 가보시겠습니까?");
-		player->Distance -= rand() % 3 + 1;
-		break;
+		choice = yes_or_no();
 
-	case 4:
+		clear_cell();
+
+		if (choice == 1) {
+			int hitch;
+			gotoxy(10, 1); printf("가까이 가보니 옆의 일행에게 차 자랑을 늘어놓고 있다, 어떻게 하시겠습니까?");
+			gotoxy(10, 2); printf("1.옆에 태워달라고 부탁한다 2.차를 빼앗는다 3.그냥 간다");
+			gotoxy(10, 34); scanf_s("%d", &hitch);
+			clear_cell();
+
+			if (hitch == 1 || hitch == 2) {
+				gotoxy(10, 1); printf("차 덕분에 쉽게 이동할 수 있었다");
+				confirm();
+			}
+
+			else {
+				gotoxy(10, 1); printf("차를 뒤로하고 길을 떠났다");
+				confirm();
+			}
+		}
+
+		else {
+			clear_cell();
+			gotoxy(10, 1); printf("차를 뒤로하고 길을 떠났다");
+			confirm();
+		}
+
+		player->Distance -= rand() % 3 + 1;
+	}
+
+	else {
+
 		gotoxy(10, 1);	printf("앞에 웬 움막이 있다.");
 		printf(" 안에서 기척이 느껴진다");
 		gotoxy(10, 2); printf("다가가 보시겠습니까?");
+
+		int encounter;
 
 		choice = yes_or_no();
 
 		if (choice == 1) {
 
-			encounter = DICEROLL(4);
+			clear_cell();
+
+			encounter = DICEROLL(3);
 
 			switch (encounter) {
 			case 1:
@@ -874,6 +875,9 @@ void approach(struct main_character* player) {
 				break;
 			case 2:
 				robbed(player);
+				break;
+			case 3:
+				sleeping(player);
 				break;
 			}
 		}
@@ -883,8 +887,6 @@ void approach(struct main_character* player) {
 			gotoxy(10, 1); printf("움막을 뒤로한채 길을 떠났다");
 			confirm();
 		}
-
-		break;
 	}
 }
 
@@ -947,8 +949,8 @@ void player_action(struct main_character* player) {
 				printf(".");
 			}
 
-			if (player->HP + 50 > 50 + player->LVL * 10 + player->stats[3] * 5) {
-				player->HP = 50 + player->LVL * 10 + player->stats[3] * 5;
+			if (player->HP + 50 > (137 - player->Distance) * 5) {
+				player->HP = 50 + (137 - player->Distance) * 5;
 			}
 
 			gotoxy(10, 2); printf("50의 체력을 회복했습니다.");
@@ -992,19 +994,9 @@ void display(struct main_character *temp) {
 	gotoxy(185, 5); printf("Name");
 	gotoxy(195, 5); printf("%s", temp->name);
 	gotoxy(180, 9); printf("HP");
-	gotoxy(195, 9); printf("%d/%d", temp->HP, 50 + temp->LVL * 10 + temp->stats[3] * 5);
-	gotoxy(180, 10); printf("Strength");
-	gotoxy(195, 10); printf("%d", temp->stats[1]);
-	gotoxy(180, 11); printf("Charming");
-	gotoxy(195, 11); printf("%d", temp->stats[2]);
-	gotoxy(180, 12); printf("Endurance");
-	gotoxy(195, 12); printf("%d", temp->stats[3]);
-	gotoxy(180, 13); printf("Intelligence");
-	gotoxy(195, 13); printf("%d", temp->stats[4]);
-	gotoxy(180, 14); printf("Luck");
-	gotoxy(195, 14); printf("%d", temp->stats[5]);
-	gotoxy(180, 15); printf("Distance");
-	gotoxy(195, 15); printf("%d", temp->Distance);
+	gotoxy(195, 9); printf("%d/%d", temp->HP, 50 + (137 - temp->Distance) * 5);
+	gotoxy(180, 12); printf("Distance");
+	gotoxy(195, 12); printf("%d", temp->Distance);
 
 }
 
@@ -1031,24 +1023,42 @@ int main(void) {
 	printf("20xx년, 세계는 핵의 불길에 휩싸였다\n");
 	Sleep(500);
 	printf("바다는 마르고 땅은 갈라져 모든 생명체가 사라진 듯 하였다. 하지만, 인류는 멸망하지 않았다!\n");
-	Sleep(500);
+	Sleep(1000);
 	printf("핵전쟁으로 황폐화된 세계에서 사람들의 일부는 흉포화된 폭력에 억눌려 살아가고 있다.\n");
-	Sleep(500);
+	Sleep(800);
 	printf("그 세계에서 대전의 전설적인 잡화상인 %s 은/는 전설속의 시장인 남대문시장을 향해 모험을 떠나려한다.........", player.name);
 	Sleep(1000);
 
 	confirm();
 
+	system("cls");
+
 	while (&player.HP > 0) {
 
 		display(&player);
 		player_action(&player);
-		if (player.HP > 50 + player.LVL * 10 + player.stats[3] * 5) {
-			player.HP = 50 + player.LVL * 10 + player.stats[3] * 5;
+		if (player.HP > 50 + (137 - player.Distance) * 5) {
+			player.HP = 50 + (137 - player.Distance) * 5;
 		}
-		if (player.Distance >= player.LVL * 10 + 100) {
-			*player.stats = stat_distribution(player.stats, LVLup_stats, player.name);
+		if (player.Distance == 0) {
+			system("cls");
+			printf("드디어 %s는 남대문시장에 도착했다.", player.name);
+			Sleep(1000);
+			printf("하지만 남대문시장도 핵의 불길을 피할 수는 없었던 모양이다.");
+			Sleep(1000);
+			printf("굴러다니는 잔해들을 내려다보며 그 사이로 서있는 %s에겐 그 어떤 낙담이나 슬픔의 표정이라곤 찾아볼 수 없었다.", player.name);
+			Sleep(1000);
+			printf("오히려 더욱 번쩍이는 눈빛을 하고 거대한 대륙이 있을 북쪽으로 발걸음을 옮겼다...................");
+
+			confirm();
+			system("cls");
+
+			printf("플레이해주셔서 감사합니다");
+			confirm();
+
+			exit(0);
 		}
+		player.Distance--;
 		system("cls");
 	}
 	return 0;
